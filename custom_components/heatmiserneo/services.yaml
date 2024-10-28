@@ -37,7 +37,7 @@ timer_hold_on:
   target:
     entity:
       integration: heatmiserneo
-      domain: switch
+      domain: select
   fields:
     hold_duration:
       name: Hold Duration
@@ -46,3 +46,9 @@ timer_hold_on:
       example: '01:00:00'
       selector:
         duration:
+    hold_state:
+      name: Hold State
+      description: Whether we should hold on or off
+      default: true
+      selector:
+        boolean:

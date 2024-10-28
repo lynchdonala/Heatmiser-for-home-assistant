@@ -27,10 +27,30 @@
                     "hvac_modes": "HVAC Mode: (deselect all options to revert to default behaviour)",
                     "more": "Configure another device"
                 },
-            "description": "Select a device and configure the HVAC modes"
+                "description": "Select a device and configure the HVAC modes"
             }
         },
-    "error": {
+        "error": {}
+    },
+    "entity": {
+        "select": {
+            "timer_mode": {
+                "state": {
+                    "auto": "Auto",
+                    "standby": "Standby",
+                    "override_on": "Override On",
+                    "override_off": "Override Off"
+                }
+            },
+            "plug_mode": {
+                "state": {
+                    "auto": "Auto",
+                    "on": "On",
+                    "off": "Off",
+                    "override_on": "Override On",
+                    "override_off": "Override Off"
+                }
+            }
         }
     }
 }
