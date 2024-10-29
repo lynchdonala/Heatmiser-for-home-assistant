@@ -1,5 +1,8 @@
 # Change Log
 
+## 20241029
+- Move Dev branch installation notes from readme.md to dev_installation.md
+
 ## 20241028
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/200 - Adds diagnostics, thanks @ocrease.
 
