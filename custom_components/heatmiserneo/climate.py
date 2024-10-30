@@ -5,10 +5,10 @@ import asyncio
 from collections import OrderedDict
 from dataclasses import dataclass
 from datetime import timedelta
+from functools import cached_property
 import logging
 
 from neohubapi.neohub import HCMode, NeoHub, NeoStat
-from propcache import cached_property
 import voluptuous as vol
 
 from homeassistant.components.climate import (
