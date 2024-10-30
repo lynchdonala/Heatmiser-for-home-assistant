@@ -66,6 +66,7 @@ async def set_timer_override(
     dev.hold_on = state
     if state:
         dev.timer_on = on
+        dev.hold_temp = 1 if on else 0
     dev.hold_time = timedelta(minutes=duration)
 
 
@@ -102,6 +103,7 @@ async def set_plug_override(
         dev.hold_on = state
         if state:
             dev.timer_on = on
+            dev.hold_temp = 1 if on else 0
         dev.hold_time = timedelta(minutes=duration)
 
 
