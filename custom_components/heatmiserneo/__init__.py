@@ -2,6 +2,7 @@
 """The Heatmiser Neo integration."""
 
 import asyncio
+from dataclasses import dataclass
 from datetime import timedelta
 import logging
 
@@ -9,25 +10,41 @@ from neohubapi.neohub import NeoHub
 import voluptuous as vol
 
 from homeassistant import config_entries
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers.typing import ConfigType
 
-from .const import COORDINATOR, DOMAIN, HEATMISER_HUB_PRODUCT_LIST, HUB
+from .const import DOMAIN, HEATMISER_HUB_PRODUCT_LIST
 from .coordinator import HeatmiserNeoCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup(hass, config):
+type HeatmiserNeoConfigEntry = ConfigEntry[HeatmiserNeoData]
+
+
+@dataclass
+class HeatmiserNeoData:
+    """Class to store Heatmiser Neo runtime data."""
+
+    hub: NeoHub
+    coordinator: HeatmiserNeoCoordinator
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up Heatmiser Neo components."""
     hass.data.setdefault(DOMAIN, {})
 
     return True
 
 
-async def async_setup_entry(hass, entry):
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: HeatmiserNeoConfigEntry,
+) -> bool:
     """Set up Heatmiser Neo from a config entry."""
 
     # Set the Hub up to use and save
@@ -74,11 +91,7 @@ async def async_setup_entry(hass, entry):
 
     coordinator.serial_number = hub_serial_number
 
-    # Store hub and coordinator per entry_id
-    hass.data[DOMAIN][entry.entry_id] = {
-        HUB: hub,
-        COORDINATOR: coordinator,
-    }
+    entry.runtime_data = HeatmiserNeoData(hub, coordinator)
 
     await coordinator.async_config_entry_first_refresh()
     await hass.config_entries.async_forward_entry_setups(

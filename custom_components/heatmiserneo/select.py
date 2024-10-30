@@ -14,22 +14,20 @@ from neohubapi.neohub import NeoHub, NeoStat
 import voluptuous as vol
 
 from homeassistant.components.select import SelectEntity
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall, callback
 from homeassistant.helpers import entity_platform
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from . import hold_duration_validation
+from . import HeatmiserNeoConfigEntry, hold_duration_validation
 from .const import (
     ATTR_HOLD_DURATION,
     ATTR_HOLD_STATE,
-    COORDINATOR,
     DEFAULT_PLUG_HOLD_DURATION,
     DEFAULT_TIMER_HOLD_DURATION,
-    DOMAIN,
-    HUB,
+    HEATMISER_TYPE_IDS_PLUG,
+    HEATMISER_TYPE_IDS_TIMER,
     SERVICE_TIMER_HOLD_ON,
     ModeSelectOption,
 )
@@ -178,8 +176,10 @@ SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
         key="heatmiser_neo_timer_mode_select",
         name=None,  # This is the main entity of the device
         options=[c.value.lower() for c in TIMER_SET_MODE],
-        setup_filter_fn=lambda device: (
-            device.device_type in [1, 2, 7, 12, 13] and device.time_clock_mode
+        setup_filter_fn=lambda device, _: (
+            device.device_type in HEATMISER_TYPE_IDS_TIMER
+            and device.time_clock_mode
+            and device.device_type not in HEATMISER_TYPE_IDS_PLUG
         ),
         value_fn=lambda dev: _timer_mode(dev).value,
         set_value_fn=lambda mode, dev, hub: TIMER_SET_MODE.get(ModeSelectOption(mode))(
@@ -192,7 +192,7 @@ SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
         key="heatmiser_neo_plug_mode_select",
         name=None,  # This is the main entity of the device
         options=[c.value.lower() for c in PLUG_SET_MODE],
-        setup_filter_fn=lambda device: (device.device_type == 6),
+        setup_filter_fn=lambda device, _: device.device_type in HEATMISER_TYPE_IDS_PLUG,
         value_fn=lambda dev: _plug_mode(dev).value,
         set_value_fn=lambda mode, dev, hub: PLUG_SET_MODE.get(ModeSelectOption(mode))(
             dev, hub
@@ -205,18 +205,18 @@ SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: HeatmiserNeoConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Heatmiser Neo select entities."""
-    hub = hass.data[DOMAIN][entry.entry_id][HUB]
-    coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
+    hub = entry.runtime_data.hub
+    coordinator = entry.runtime_data.coordinator
 
     if coordinator.data is None:
         _LOGGER.error("Coordinator data is None. Cannot set up button entities")
         return
 
-    devices_data, _ = coordinator.data
+    devices_data, system_data = coordinator.data
 
     neo_devices = {device.name: device for device in devices_data["neo_devices"]}
     _LOGGER.info("Adding Neo Device Buttons")
@@ -225,7 +225,7 @@ async def async_setup_entry(
         HeatmiserNeoSelectEntity(neodevice, coordinator, hub, description)
         for description in SELECT
         for neodevice in neo_devices.values()
-        if description.setup_filter_fn(neodevice)
+        if description.setup_filter_fn(neodevice, system_data)
     )
 
     platform = entity_platform.async_get_current_platform()

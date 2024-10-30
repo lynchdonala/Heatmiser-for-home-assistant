@@ -11,30 +11,29 @@ from homeassistant.components.button import (
     ButtonEntity,
     ButtonEntityDescription,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .const import COORDINATOR, DOMAIN, HUB
+from . import HeatmiserNeoConfigEntry
 from .entity import HeatmiserNeoEntity, HeatmiserNeoEntityDescription
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: HeatmiserNeoConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Heatmiser Neo button entities."""
-    hub = hass.data[DOMAIN][entry.entry_id][HUB]
-    coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
+    hub = entry.runtime_data.hub
+    coordinator = entry.runtime_data.coordinator
 
     if coordinator.data is None:
         _LOGGER.error("Coordinator data is None. Cannot set up button entities")
         return
 
-    devices_data, _ = coordinator.data
+    devices_data, system_data = coordinator.data
 
     neo_devices = {device.name: device for device in devices_data["neo_devices"]}
     _LOGGER.info("Adding Neo Device Buttons")
@@ -43,7 +42,7 @@ async def async_setup_entry(
         HeatmiserNeoButton(neodevice, coordinator, hub, description)
         for description in BUTTONS
         for neodevice in neo_devices.values()
-        if description.setup_filter_fn(neodevice)
+        if description.setup_filter_fn(neodevice, system_data)
     )
 
 

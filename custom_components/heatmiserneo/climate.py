@@ -8,11 +8,17 @@ from datetime import timedelta
 import logging
 
 from neohubapi.neohub import HCMode, NeoHub, NeoStat
+from propcache import cached_property
 import voluptuous as vol
 
 from homeassistant.components.climate import (
     ATTR_TARGET_TEMP_HIGH,
     ATTR_TARGET_TEMP_LOW,
+    FAN_AUTO,
+    FAN_HIGH,
+    FAN_LOW,
+    FAN_MEDIUM,
+    FAN_OFF,
     PRESET_AWAY,
     PRESET_BOOST,
     PRESET_HOME,
@@ -23,24 +29,23 @@ from homeassistant.components.climate import (
     HVACMode,
     UnitOfTemperature,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_TEMPERATURE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_platform
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from . import hold_duration_validation
+from . import HeatmiserNeoConfigEntry, hold_duration_validation
 from .const import (
     ATTR_HOLD_DURATION,
     ATTR_HOLD_TEMPERATURE,
     CONF_HVAC_MODES,
-    COORDINATOR,
     DEFAULT_NEOSTAT_HOLD_DURATION,
     DEFAULT_NEOSTAT_TEMPERATURE_BOOST,
-    DOMAIN,
+    HEATMISER_FAN_SPEED_HA_FAN_MODE,
     HEATMISER_TEMPERATURE_UNIT_HA_UNIT,
-    HUB,
+    HEATMISER_TYPE_IDS_HC,
+    HEATMISER_TYPE_IDS_THERMOSTAT,
     SERVICE_HOLD_OFF,
     SERVICE_HOLD_ON,
 )
@@ -55,12 +60,12 @@ THERMOSTATS = "thermostats"
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: HeatmiserNeoConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Heatmiser Neo Climate entities."""
-    hub = hass.data[DOMAIN][entry.entry_id][HUB]
-    coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
+    hub = entry.runtime_data.hub
+    coordinator = entry.runtime_data.coordinator
 
     if coordinator.data is None:
         _LOGGER.error("Coordinator data is None. Cannot set up climate entities")
@@ -99,7 +104,7 @@ async def async_setup_entry(
         )
         for description in CLIMATE
         for neodevice in thermostats.values()
-        if description.setup_filter_fn(neodevice)
+        if description.setup_filter_fn(neodevice, system_data)
     )
 
     platform = entity_platform.async_get_current_platform()
@@ -133,9 +138,10 @@ CLIMATE: tuple[HeatmiserNeoClimateEntityDescription, ...] = (
     HeatmiserNeoClimateEntityDescription(
         key="heatmiser_neostat",
         name=None,  # Use device name
-        setup_filter_fn=lambda device: device.device_type
-        in [1, 2, 7, 8, 9, 11, 12, 13, 15, 17]
-        and not device.time_clock_mode,
+        setup_filter_fn=lambda device, _: (
+            device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT
+            and not device.time_clock_mode
+        ),
     ),
 )
 
@@ -164,14 +170,29 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
 
         self._attr_temperature_unit = unit_of_measurement
         self._attr_target_temperature_step = temperature_step
+        self._attr_max_temp = neostat.max_temperature_limit
+        self._attr_min_temp = neostat.min_temperature_limit
         self._attr_preset_modes = [PRESET_HOME, PRESET_BOOST, PRESET_AWAY]
-        self._hvac_modes = []
+        self._attr_fan_modes = [FAN_OFF, FAN_LOW, FAN_MEDIUM, FAN_HIGH, FAN_AUTO]
+
+        hvac_modes = []
         if hasattr(neostat, "standby"):
-            self._hvac_modes.append(HVACMode.OFF)
+            hvac_modes.append(HVACMode.OFF)
         # The following devices support Heating modes
-        if self.data.device_type in [1, 2, 7, 8, 9, 11, 12, 13, 15, 17]:
-            self._hvac_modes.append(HVACMode.HEAT)
-        # Todo: Add support for other modes per device type.
+        if self.data.device_type in HEATMISER_TYPE_IDS_HC:
+            if self.system_data.GLOBAL_SYSTEM_TYPE == "HeatOnly":
+                hvac_modes.append(HVACMode.HEAT)
+            elif self.system_data.GLOBAL_SYSTEM_TYPE == "CoolOnly":
+                hvac_modes.append(HVACMode.COOL)
+            else:
+                hvac_modes.append(HVACMode.HEAT)
+                hvac_modes.append(HVACMode.COOL)
+                hvac_modes.append(HVACMode.HEAT_COOL)
+            hvac_modes.append(HVACMode.FAN_ONLY)
+        else:
+            hvac_modes.append(HVACMode.HEAT)
+
+        self._attr_hvac_modes = hvac_modes
 
     async def async_set_hvac_mode(self, hvac_mode):
         """Set hvac mode."""
@@ -333,19 +354,14 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
         """Return The current operation (e.g. heat, cool, idle). Used to determine state."""
         if self.data.standby:
             return HVACMode.OFF
-        if self.data.hc_mode == "COOLING":
-            return HVACMode.COOL
-        if self.data.hc_mode == "HEATING":
-            return HVACMode.HEAT
-        if self.data.hc_mode == "AUTO":
-            return HVACMode.HEAT_COOL
-        if self.data.hc_mode == "VENT":
-            return HVACMode.FAN_ONLY
-
-    @property
-    def hvac_modes(self):
-        """Return the list of available operation modes."""
-        return self._hvac_modes
+        if self.data.device_type in HEATMISER_TYPE_IDS_HC:
+            if self.data.hc_mode == "COOLING":
+                return HVACMode.COOL
+            if self.data.hc_mode == "AUTO":
+                return HVACMode.HEAT_COOL
+            if self.data.hc_mode == "VENT":
+                return HVACMode.FAN_ONLY
+        return HVACMode.HEAT
 
     async def set_hold(self, hold_duration: timedelta, hold_temperature: float):
         """Set Hold for Zone."""
@@ -389,7 +405,7 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
 
         return result
 
-    @property
+    @cached_property
     def supported_features(self):
         """Return the list of supported features."""
         # Do this based on device type
@@ -401,19 +417,20 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
             | ClimateEntityFeature.PRESET_MODE
         )
 
-        # TODO: Add the rest of the thermostat models here
-        if self.data.device_type in [1, 2, 7, 8, 9, 11, 12, 13, 15, 17]:
-            # Heatmiser NeoStat v1, NeoStat V2
+        if self.data.device_type in HEATMISER_TYPE_IDS_HC:
+            # neoStat-HC
+            if self.system_data.GLOBAL_SYSTEM_TYPE not in ["HeatOnly", "CoolOnly"]:
+                supported_features = (
+                    supported_features | ClimateEntityFeature.TARGET_TEMPERATURE_RANGE
+                )
+            else:
+                supported_features = (
+                    supported_features | ClimateEntityFeature.TARGET_TEMPERATURE
+                )
+            supported_features = supported_features | ClimateEntityFeature.FAN_MODE
+        else:
             supported_features = (
                 supported_features | ClimateEntityFeature.TARGET_TEMPERATURE
-            )
-
-        elif self.data.device_type == 11:
-            # neoStat-HC
-            supported_features = (
-                supported_features
-                | ClimateEntityFeature.TARGET_TEMPERATURE
-                | ClimateEntityFeature.FAN_MODE
             )
 
         return supported_features
@@ -441,6 +458,28 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
         if self.data.hold_on:
             return PRESET_BOOST
         return PRESET_HOME
+
+    @property
+    def fan_mode(self) -> str | None:
+        """Return the fan setting."""
+        if self.data.fan_control != "Manual":
+            return FAN_AUTO
+        return HEATMISER_FAN_SPEED_HA_FAN_MODE.get(self.data.fan_speed, FAN_OFF)
+
+    async def async_set_fan_mode(self, fan_mode: str) -> None:
+        """Set the fan mode/speed."""
+        mode = "OFF"
+        if fan_mode == FAN_HIGH:
+            mode = "HIGH"
+        elif fan_mode == FAN_MEDIUM:
+            mode = "MED"
+        elif fan_mode == FAN_LOW:
+            mode = "LOW"
+        elif fan_mode == FAN_AUTO:
+            mode = "AUTO"
+        message = {"SET_FAN_SPEED": [mode, [self.name]]}
+        # TODO this should be in the API
+        await self._hub._send(message)
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Set preset mode."""

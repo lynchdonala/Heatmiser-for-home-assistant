@@ -3,12 +3,15 @@
 
 import enum
 
-from homeassistant.const import UnitOfTemperature
+from homeassistant.components.climate import (
+    FAN_AUTO,
+    FAN_HIGH,
+    FAN_LOW,
+    FAN_MEDIUM,
+    UnitOfTemperature,
+)
 
 DOMAIN = "heatmiserneo"
-
-HUB = "Hub"
-COORDINATOR = "Coordinator"
 
 DEFAULT_HOST = "Neo-Hub"
 DEFAULT_PORT = 4242
@@ -56,6 +59,16 @@ HEATMISER_PRODUCT_LIST = [
     "Edge WiFi",
 ]
 
+HEATMISER_TYPE_IDS_THERMOSTAT = {1, 2, 7, 8, 9, 11, 12, 13, 15, 17}
+HEATMISER_TYPE_IDS_TIMER = {1, 2, 6, 7, 8, 9, 11, 12, 13, 15, 17}
+HEATMISER_TYPE_IDS_PLUG = {6}
+HEATMISER_TYPE_IDS_HC = {8, 11}
+HEATMISER_TYPE_IDS_THERMOSTAT_NOT_HC = HEATMISER_TYPE_IDS_THERMOSTAT.difference(
+    HEATMISER_TYPE_IDS_HC
+)
+HEATMISER_TYPE_IDS_AWAY = HEATMISER_TYPE_IDS_THERMOSTAT.union(HEATMISER_TYPE_IDS_TIMER)
+HEATMISER_TYPE_IDS_STANDBY = HEATMISER_TYPE_IDS_AWAY.difference(HEATMISER_TYPE_IDS_PLUG)
+
 
 # This should be in the neohubapi.neohub enums code
 class AvailableMode(str, enum.Enum):
@@ -82,3 +95,17 @@ HEATMISER_TEMPERATURE_UNIT_HA_UNIT = {
     "F": UnitOfTemperature.FAHRENHEIT,
     "C": UnitOfTemperature.CELSIUS,
 }
+
+HEATMISER_FAN_SPEED_HA_FAN_MODE = {
+    "High": FAN_HIGH,
+    "Medium": FAN_MEDIUM,
+    "Low": FAN_LOW,
+    "Auto": FAN_AUTO,
+}
+
+
+class FanControl(str, enum.Enum):
+    """Fan control mode options for NeoStat HC."""
+
+    MANUAL = "Manual"
+    AUTOMATIC = "Automatic"

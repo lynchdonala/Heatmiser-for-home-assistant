@@ -6,6 +6,7 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 import logging
+from typing import Any
 
 from neohubapi.neohub import NeoHub, NeoStat
 
@@ -24,7 +25,7 @@ _LOGGER = logging.getLogger(__name__)
 class HeatmiserNeoEntityDescription(EntityDescription):
     """Describes Heatmiser Neo entity."""
 
-    setup_filter_fn: Callable[[NeoStat], bool] = lambda _: True
+    setup_filter_fn: Callable[[NeoStat, Any], bool] = lambda dev, sys_data: True
     availability_fn: Callable[[NeoStat], bool] = lambda device: not device.offline
     # extra_attrs: list[str] | None = None
     custom_functions: (
