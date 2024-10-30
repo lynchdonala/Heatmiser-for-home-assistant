@@ -1,5 +1,10 @@
 # Change Log
 
+## 20241030
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/203 - Improves diagnostics, thanks ocrease.
+- Updated readme (Supporting this project).
+- Forked default branch Version 1.6
+
 ## 20241029
 - Move Dev branch installation notes from readme.md to dev_installation.md
 
