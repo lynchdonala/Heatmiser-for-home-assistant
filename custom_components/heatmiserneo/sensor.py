@@ -33,9 +33,9 @@ from .const import (
     HEATMISER_FAN_SPEED_HA_FAN_MODE,
     HEATMISER_TEMPERATURE_UNIT_HA_UNIT,
     HEATMISER_TYPE_IDS_HC,
+    HEATMISER_TYPE_IDS_HOLD,
     HEATMISER_TYPE_IDS_THERMOSTAT,
     HEATMISER_TYPE_IDS_THERMOSTAT_NOT_HC,
-    HEATMISER_TYPE_IDS_TIMER,
 )
 from .entity import HeatmiserNeoEntity, HeatmiserNeoEntityDescription
 
@@ -90,23 +90,12 @@ class HeatmiserNeoSensorEntityDescription(
 SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
     HeatmiserNeoSensorEntityDescription(
         key="heatmiser_neo_hold_time_sensor",
-        name="Hold Remaining",
+        name="Hold Time Remaining",
         value_fn=lambda device: (
             device.hold_time if device.hold_on else timedelta(seconds=0)
         ),
         setup_filter_fn=lambda device, _: (
-            device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT
-            and not device.time_clock_mode
-        ),
-    ),
-    HeatmiserNeoSensorEntityDescription(
-        key="heatmiser_neo_timer_hold_time_sensor",
-        name="Timer Hold Remaining",
-        value_fn=lambda device: (
-            device.hold_time if device.hold_on else timedelta(seconds=0)
-        ),
-        setup_filter_fn=lambda device, _: (
-            device.device_type in HEATMISER_TYPE_IDS_TIMER and device.time_clock_mode
+            device.device_type in HEATMISER_TYPE_IDS_HOLD
         ),
     ),
     HeatmiserNeoSensorEntityDescription(
@@ -189,8 +178,8 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
     HeatmiserNeoSensorEntityDescription(
         key="heatmiser_neo_stat_hold_temp_cool",
         device_class=SensorDeviceClass.TEMPERATURE,
-        name="Hold Temperature",
-        value_fn=lambda device: device.hold_temp,
+        name="Hold Cooling Temperature",
+        value_fn=lambda device: device.hold_cool,
         setup_filter_fn=lambda device, sys_data: (
             device.device_type in HEATMISER_TYPE_IDS_HC
             and not device.time_clock_mode

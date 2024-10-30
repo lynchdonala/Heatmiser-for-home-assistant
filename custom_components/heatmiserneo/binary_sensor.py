@@ -21,8 +21,8 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from . import HeatmiserNeoConfigEntry
 from .const import (
     HEATMISER_TYPE_IDS_AWAY,
+    HEATMISER_TYPE_IDS_HOLD,
     HEATMISER_TYPE_IDS_STANDBY,
-    HEATMISER_TYPE_IDS_THERMOSTAT,
     HEATMISER_TYPE_IDS_TIMER,
 )
 from .entity import HeatmiserNeoEntity, HeatmiserNeoEntityDescription
@@ -87,17 +87,7 @@ BINARY_SENSORS: tuple[HeatmiserNeoBinarySensorEntityDescription, ...] = (
         name="Hold Active",
         value_fn=lambda device: device.hold_on,
         setup_filter_fn=lambda device, _: (
-            device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT
-            and not device.time_clock_mode
-        ),
-    ),
-    HeatmiserNeoBinarySensorEntityDescription(
-        key="heatmiser_neo_device_timer_hold_active",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        name="Timer Hold Active",
-        value_fn=lambda device: device.hold_on,
-        setup_filter_fn=lambda device, _: (
-            device.device_type in HEATMISER_TYPE_IDS_TIMER and device.time_clock_mode
+            device.device_type in HEATMISER_TYPE_IDS_HOLD,
         ),
     ),
     HeatmiserNeoBinarySensorEntityDescription(
@@ -109,7 +99,7 @@ BINARY_SENSORS: tuple[HeatmiserNeoBinarySensorEntityDescription, ...] = (
     ),
     HeatmiserNeoBinarySensorEntityDescription(
         key="heatmiser_neo_device_timer_output_active",
-        name="Timer Output",
+        name="Output",
         value_fn=lambda device: device.timer_on,
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_TIMER and device.time_clock_mode
@@ -140,7 +130,9 @@ BINARY_SENSORS: tuple[HeatmiserNeoBinarySensorEntityDescription, ...] = (
         entity_registry_enabled_default=False,
         name="Holiday",
         value_fn=lambda device: device.holiday,
-        setup_filter_fn=lambda device, _: device.device_type in HEATMISER_TYPE_IDS_AWAY,
+        setup_filter_fn=lambda device, _: (
+            device.device_type in HEATMISER_TYPE_IDS_AWAY
+        ),
     ),
 )
 

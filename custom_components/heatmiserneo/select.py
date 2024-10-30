@@ -177,9 +177,9 @@ SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
         name=None,  # This is the main entity of the device
         options=[c.value.lower() for c in TIMER_SET_MODE],
         setup_filter_fn=lambda device, _: (
-            device.device_type in HEATMISER_TYPE_IDS_TIMER
+            device.device_type
+            in HEATMISER_TYPE_IDS_TIMER.difference(HEATMISER_TYPE_IDS_PLUG)
             and device.time_clock_mode
-            and device.device_type not in HEATMISER_TYPE_IDS_PLUG
         ),
         value_fn=lambda dev: _timer_mode(dev).value,
         set_value_fn=lambda mode, dev, hub: TIMER_SET_MODE.get(ModeSelectOption(mode))(
