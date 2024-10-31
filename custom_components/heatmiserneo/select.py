@@ -95,7 +95,7 @@ async def set_plug_override(
     """Set timer override. Disable manual if set."""
     if turn_off_manual and not dev.manual_off:
         await hub.set_manual(False, [dev])
-        dev.data.manual_off = True
+        dev.manual_off = True
     desired_state = duration > 0
     if dev.hold_on != desired_state:
         await dev.set_timer_hold(on, duration)

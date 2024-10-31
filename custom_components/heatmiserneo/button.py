@@ -17,6 +17,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from . import HeatmiserNeoConfigEntry
+from .const import HEATMISER_TYPE_IDS_IDENTIFY
 from .entity import HeatmiserNeoEntity, HeatmiserNeoEntityDescription
 
 
@@ -61,6 +62,9 @@ BUTTONS: tuple[HeatmiserNeoButtonEntityDescription, ...] = (
         key="heatmiser_neo_identify_button",
         device_class=ButtonDeviceClass.IDENTIFY,
         entity_category=EntityCategory.DIAGNOSTIC,
+        setup_filter_fn=lambda device, _: (
+            device.device_type in HEATMISER_TYPE_IDS_IDENTIFY
+        ),
     ),
 )
 
