@@ -1,5 +1,8 @@
 # Change Log
 
+## 20241031
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/201 by @ocrease. I would suggest to treat this as a complete re-write. The change list is huge and includes many fixes and new features. I recommend reading the PR for details.
+
 ## 20241030
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/203 - Improves diagnostics, thanks ocrease.
 - Updated readme (Supporting this project).
