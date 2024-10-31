@@ -9,11 +9,10 @@ from typing import Any
 from neohubapi.neohub import NeoHub, NeoStat
 
 from homeassistant.components.diagnostics import async_redact_data
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
 
-from .const import COORDINATOR, DOMAIN, HUB
+from . import HeatmiserNeoConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,11 +22,12 @@ TO_REDACT_DEVICES = {"pin_number"}
 
 
 async def async_get_config_entry_diagnostics(
-    hass: HomeAssistant, entry: ConfigEntry
+    hass: HomeAssistant, entry: HeatmiserNeoConfigEntry
 ) -> dict[str, Any]:
     """Return diagnostics for a config entry."""
-    coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
-    hub = hass.data[DOMAIN][entry.entry_id][HUB]
+    hub = entry.runtime_data.hub
+    coordinator = entry.runtime_data.coordinator
+
     devices_data, system_data = coordinator.data
     engineers_data = await hub.get_engineers()
     raw_live_data = await hub.get_live_data()
