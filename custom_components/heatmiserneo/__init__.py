@@ -15,7 +15,6 @@ from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 import homeassistant.helpers.config_validation as cv
-from homeassistant.helpers.typing import ConfigType
 
 from .const import DOMAIN, HEATMISER_HUB_PRODUCT_LIST
 from .coordinator import HeatmiserNeoCoordinator
@@ -32,13 +31,6 @@ class HeatmiserNeoData:
 
     hub: NeoHub
     coordinator: HeatmiserNeoCoordinator
-
-
-async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Set up Heatmiser Neo components."""
-    hass.data.setdefault(DOMAIN, {})
-
-    return True
 
 
 async def async_setup_entry(

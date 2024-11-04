@@ -40,7 +40,7 @@
             },
             "plug_mode": {
                 "state": {
-                    "auto": "Auto ",
+                    "auto": "Auto",
                     "on": "On",
                     "off": "Off",
                     "override_on": "Override On",
