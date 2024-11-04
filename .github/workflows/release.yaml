@@ -20,7 +20,7 @@ jobs:
           sed -i 's/v0.0.0/${{ steps.version.outputs.version }}/' custom_components/heatmiserneo/manifest.json
 
           cd custom_components/heatmiserneo
-          zip heatmiserneo.zip -r ./
+          zip ../../heatmiserneo.zip -r ./
       - uses: JasonEtco/upload-to-release@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
