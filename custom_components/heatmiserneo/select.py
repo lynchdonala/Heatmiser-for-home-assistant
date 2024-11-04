@@ -62,6 +62,8 @@ async def set_timer_override(
 ):
     """Set timer override."""
     state = duration > 0
+    if state and on and dev.standby:
+        await set_timer_standby(dev, False)
     await dev.set_timer_hold(on, duration)
     dev.hold_on = state
     if state:
@@ -72,7 +74,7 @@ async def set_timer_override(
 
 async def set_timer_standby(dev: NeoStat, state: bool = True):
     """Set standby mode. Disable hold if set."""
-    if dev.hold_on:
+    if state and dev.hold_on:
         await set_timer_override(dev, dev.hold_temp == 1, 0)
     await dev.set_frost(state)
     dev.standby = state
