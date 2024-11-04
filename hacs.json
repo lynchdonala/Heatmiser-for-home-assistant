@@ -1,5 +1,8 @@
 {
     "name": "Heatmiser Neo Integration",
     "iot_class": "Local Polling",
-    "render_readme": true
+    "render_readme": true,
+    "zip_release": true,
+    "filename": "heatmiserneo.zip",
+    "hide_default_branch": true
 }

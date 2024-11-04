@@ -6,7 +6,7 @@
   "dependencies": [],
   "codeowners": ["MindrustUK"],
   "requirements": ["neohubapi==2.2"],
-  "version": "2.0.0",
+  "version": "v0.0.0",
   "zeroconf": [
     {"type":"_hap._tcp.local.", "name": "Heatmiser neoHub*"}
   ]
