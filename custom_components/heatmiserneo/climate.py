@@ -130,7 +130,7 @@ async def async_setup_entry(
 class HeatmiserNeoClimateEntityDescription(
     HeatmiserNeoEntityDescription, ClimateEntityDescription
 ):
-    """Describes a button entity."""
+    """Describes a Climate entity."""
 
 
 CLIMATE: tuple[HeatmiserNeoClimateEntityDescription, ...] = (
@@ -484,15 +484,10 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
         """Set preset mode."""
         device = self.data
         if preset_mode == PRESET_AWAY:
-            await self._hub.set_away(True)
-            device.away = True
-        elif device.away:
-            await self._hub.set_away(False)
-            device.away = False
+            await self.async_set_away_mode()
+        elif device.away or device.holiday:
+            await self.async_cancel_away_or_holiday()
 
-        if device.holiday:
-            await self._hub.cancel_holiday()
-            device.holiday = False
         hold_temp = float(device.target_temperature)
         hold_duration = 0
         hold_on = False
@@ -509,4 +504,3 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
             device.hold_time = timedelta(minutes=hold_duration)
 
         self.coordinator.async_update_listeners()
-        await self.coordinator.async_request_refresh()

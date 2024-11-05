@@ -39,7 +39,8 @@
           "auto": "Auto",
           "standby": "Standby",
           "override_on": "Override On",
-          "override_off": "Override Off"
+          "override_off": "Override Off",
+          "away": "Away"
         }
       },
       "plug_mode": {
@@ -48,7 +49,8 @@
           "on": "On",
           "off": "Off",
           "override_on": "Override On",
-          "override_off": "Override Off"
+          "override_off": "Override Off",
+          "away": "Away"
         }
       }
     }
