@@ -1,5 +1,9 @@
 # Change Log
 
+## 20241105
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/212 by @ocrease, should address NeoStat V1 in timeclock mode behaviours with Standby mode.
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/211 by @ocrease, adds automation and improves consistency of release versions.
+
 ## 20241031
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/201 by @ocrease. I would suggest to treat this as a complete re-write. The change list is huge and includes many fixes and new features. I recommend reading the PR for details.
 
