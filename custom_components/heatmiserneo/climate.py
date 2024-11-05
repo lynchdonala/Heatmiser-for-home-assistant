@@ -479,7 +479,7 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
             mode = "AUTO"
         message = {"SET_FAN_SPEED": [mode, [self.name]]}
         # TODO this should be in the API
-        await self._hub._send(message)
+        await self.coordinator.hub._send(message)  # noqa: SLF001
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Set preset mode."""

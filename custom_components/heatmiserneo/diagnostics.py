@@ -75,6 +75,6 @@ def convert_to_dict(device: NeoStat, device_sns: dict[str, str]) -> dict:
 
 async def retrieve_zone_device_list(zone: str, hub: NeoHub):
     """Get device list for each zone."""
-    response = await hub._send({"GET_DEVICE_LIST": zone})
+    response = await hub._send({"GET_DEVICE_LIST": zone})  # noqa: SLF001
     _LOGGER.debug("Response for GET_DEVICE_LIST on zone %s: %s", zone, response)
     return dict(vars(response)).get(zone, {})

@@ -2,6 +2,7 @@
 -->
 
 # Dev Branch
+
 Please note you are browsing a heavy work in progress branch. Many things will probably be broken and this readme will change frequently. Please pay close attention to commits to really understand what's happening. Please use the master branch unless you are brave or intentionally testing 'completed' functions to report bugs.
 
 # Heatmiser-for-home-assistant
@@ -15,9 +16,11 @@ This is a work in progress for adding Heatmiser Neo-hub support to Home Assistan
 This is a major new branch, Many things broken, change log as follows:
 
 ## Change log
+
 [Change Log](https://github.com/MindrustUK/Heatmiser-for-home-assistant/blob/dev/docs/changelog.md)
 
 # Known issues - Read me first!
+
 - Heatmiser have labeled the primary API used by this integration as "Legacy API". Please see [Troubleshooting](#troubleshooting) for further details.
 - Support for adding Token based authentication is present in the underlying noehubapi and will be coming to this plugin natively at a future date.
 - Note specifically the NeoStat WiFi device does not have an API, and so cannot be used with this (or any) NeoHub-based integration.
@@ -58,14 +61,16 @@ When the integration starts you may need to enter the Neo-hub IP address. The po
 
 ![Config](https://user-images.githubusercontent.com/56273663/98438427-fb40f200-20e1-11eb-8437-a0288548082b.png)
 
-If you are successful, after restarting HA you will see the results under Configuration -> Entities 
+If you are successful, after restarting HA you will see the results under Configuration -> Entities
 
 ![Entities](https://github.com/PhillyGilly/Heatmiser-for-home-assistant/blob/master/%235.png)
 
 # (Optional) Legacy Installation:
 
 ## For Hass.io:
+
 Install and configure SSH server from the "Add-on store". Once you have shell run the following:
+
 ```
 mkdir -p /config/custom_components
 cd /tmp/
@@ -77,13 +82,15 @@ rm -rf /tmp/heatmiserneo/
 Restart Home Assistant and setup the integration.
 
 ## For Windows 10 Manual installation:
+
 Install and configure Samba Share from the "Add-on store". Change directory to config location then run the following:
+
 ```
 Create a network drive pointing at your Home Assistant config directory.
 If there is not a sub-directory in this drive called custom_components create it.
 Now create a subdirectory under custom_components called heatmiserneo.
 Download all the files from the Heatmiser-for-home-assistant Github repository.
-Copy and paste all thoese files into the new Home Assistant heatmiserneo sub-directory.
+Copy and paste all those files into the new Home Assistant heatmiserneo sub-directory.
 ```
 
 # Troubleshooting
@@ -94,10 +101,10 @@ Copy and paste all thoese files into the new Home Assistant heatmiserneo sub-dir
 
 As suggested by Haakon Storm Heen, try namp on your local network range:
 
-```nmap -Pn -p4242 -oG - 192.168.1.0/24 | grep 4242 | grep -i open```
+`nmap -Pn -p4242 -oG - 192.168.1.0/24 | grep 4242 | grep -i open`
 
-Where supported by your network and machine you can use a tool such as ZeroConfServiceBrowser or "Discovery - DNS-SD 
-Browser" (iPhone) to detect the mDNS broadcast from the hub.  Look for "_hap._tcp." and the "Heatmiser neoHub" should be
+Where supported by your network and machine you can use a tool such as ZeroConfServiceBrowser or "Discovery - DNS-SD
+Browser" (iPhone) to detect the mDNS broadcast from the hub. Look for "\_hap.\_tcp." and the "Heatmiser neoHub" should be
 listed as a device.
 
 Note: If you discover the device via mdns/zeroconf then you can use the hostname advertised by the service.
@@ -106,96 +113,111 @@ Note: If you discover the device via mdns/zeroconf then you can use the hostname
 
 Note: This will eventually be part of the setup process and done internally.
 
-- Start a listener in a terminal: ```nc -ulk -p 19790```
-- Issue the discovery command ```echo -n "hubseek" | nc -b -u 255.255.255.255 19790```
+- Start a listener in a terminal: `nc -ulk -p 19790`
+- Issue the discovery command `echo -n "hubseek" | nc -b -u 255.255.255.255 19790`
 
-A response such as ```hubseek{"ip":"192.168.0.2","device_id":"nn:nn:nn:nn:nn:nn"}``` should then be rendered in the 
+A response such as `hubseek{"ip":"192.168.0.2","device_id":"nn:nn:nn:nn:nn:nn"}` should then be rendered in the
 listening terminal.
 
 ## I can't connect to my Neohub
 
 - If you are not using token based authentication;
+
   - Check the Heatmiser Mobile App and under _SETTINGS_ -> _API_ -> _API TOKENS_ ensure that _Legacy API_ is enabled.
 
-  - After checking the above please try testing with the hub using the following commands from the Home Assistant 
-  terminal (Provided by the addon "Terminal & SSH");
-  - ```printf '{"INFO":0}\0' | nc YOUR_DEVICE_IP_HERE 4242```
+  - After checking the above please try testing with the hub using the following commands from the Home Assistant
+    terminal (Provided by the addon "Terminal & SSH");
+  - `printf '{"INFO":0}\0' | nc YOUR_DEVICE_IP_HERE 4242`
 
 - If you are trying to authenticate using token based authentication;
-  - The following instructions are a placeholder for now and will be further expanded on once the integration better 
+  - The following instructions are a placeholder for now and will be further expanded on once the integration better
   - supports token based authentication via web sockets.
-  - Ensure you are applying this configuration to a Heatmiser NeoHub 2 or later. The Version 1 Hub does not support this 
-  authentication mechanism.
+  - Ensure you are applying this configuration to a Heatmiser NeoHub 2 or later. The Version 1 Hub does not support this
+    authentication mechanism.
   - Ensure that your token is correct, this can be checked in the Heatmiser mobile app under _SETTINGS_ -> _API_ ->
-  _API TOKENS_
+    _API TOKENS_
   - Use postman to troubleshoot.
 
 ### The info command times out
-- Have you tried to ping the neohub? ```ping IP_ADDRESSS_HERE``` if this fails the Neohub is likely unreachable for some 
-reason.
+
+- Have you tried to ping the neohub? `ping IP_ADDRESSS_HERE` if this fails the Neohub is likely unreachable for some
+  reason.
 
 ## Other common troubleshooting steps to try
 
 - Try restarting Home Assistant.
-- Check the logs: Within Home Assistant, from the _Settings_ menu navigate to _Logs_ and look for anything relating to 
-_Heatmiser_.
+- Check the logs: Within Home Assistant, from the _Settings_ menu navigate to _Logs_ and look for anything relating to
+  _Heatmiser_.
 - Enable debugging and check the logs again:
-  - Within Home Assistant, from the _Settings_ menu navigate to _Devices & Services_ and then to  
-  _Heatmiser Neo Climate_ and from the left side menu select _Enable debug logging_.
-  - Now navigate to _Developer Tools_ and then to _RESTART_, when prompted select _Restart Home Assistant_ follow the 
-  steps above to check the logs again.
-- Remove the existing installation and re-install: To ensure total removal of the _Heatmiser Neo Climate_ integration 
-using Home Assistant terminal (Provided by the addon "Terminal & SSH") issue the following command; 
-```rm -rf /config/custom_components/heatmiserneo``` restart Home Assistant and install from fresh.
+  - Within Home Assistant, from the _Settings_ menu navigate to _Devices & Services_ and then to
+    _Heatmiser Neo Climate_ and from the left side menu select _Enable debug logging_.
+  - Now navigate to _Developer Tools_ and then to _RESTART_, when prompted select _Restart Home Assistant_ follow the
+    steps above to check the logs again.
+- Remove the existing installation and re-install: To ensure total removal of the _Heatmiser Neo Climate_ integration
+  using Home Assistant terminal (Provided by the addon "Terminal & SSH") issue the following command;
+  `rm -rf /config/custom_components/heatmiserneo` restart Home Assistant and install from fresh.
 
 ## Bug Reporting and asking for help:
+
 - Please ensure that if you wish to report a bug that is not fixed in the [Dev Branch](https://github.com/MindrustUK/Heatmiser-for-home-assistant/tree/dev) before submitting your bug.
-- Include logs, versions, any troubleshooting attempted, outputs and expected vs observed behaviour. 
-- Please note "It doesn't work" and other vague "It's broken" messages will only prompt a lot of questions to understand 
-why things are broken, the more information upfront will help expedite any advice and resolution.
+- Include logs, versions, any troubleshooting attempted, outputs and expected vs observed behaviour.
+- Please note "It doesn't work" and other vague "It's broken" messages will only prompt a lot of questions to understand
+  why things are broken, the more information upfront will help expedite any advice and resolution.
 
 # Services
+
 This integration provides two services that can be called from home assistant.
 
 ## Hold
-You can apply a hold using the `heatmiserneo.hold_on` service.  This can be used to target an entity, device or area and also accepts the following parameters:
-- `hold_duration` - how long to hold the specified temperature.  This is given in Home Assistant duration format (hh:mm e.g. `hold_duration: 01:30`) and can go up to 99:59.
-- `hold_temperature` - sets the temperature to hold.  Specified as an integer (e.g. `hold_temperature: 20`).
+
+You can apply a hold using the `heatmiserneo.hold_on` service. This can be used to target an entity, device or area and also accepts the following parameters:
+
+- `hold_duration` - how long to hold the specified temperature. This is given in Home Assistant duration format (hh:mm e.g. `hold_duration: 01:30`) and can go up to 99:59.
+- `hold_temperature` - sets the temperature to hold. Specified as an integer (e.g. `hold_temperature: 20`).
 
 If there is an existing hold on any device targeted by the service call, it is replaced by the new hold.
+
 ## Release Hold
-You can release any existing hold on a NeoStat specified by entity, device or area.  There are no other parameters.
+
+You can release any existing hold on a NeoStat specified by entity, device or area. There are no other parameters.
+
 ## Timer Hold
-You can apply a hold to a timer entity using the `heatmiserneo.timer_hold_on` service.  This can be used to target an entity, device or area operating in timer mode and also accepts the following parameters:
-- `hold_duration` - how long to hold the specified temperature.  This is given in Home Assistant duration format (hh:mm e.g. `hold_duration: 01:30`)
+
+You can apply a hold to a timer entity using the `heatmiserneo.timer_hold_on` service. This can be used to target an entity, device or area operating in timer mode and also accepts the following parameters:
+
+- `hold_duration` - how long to hold the specified temperature. This is given in Home Assistant duration format (hh:mm e.g. `hold_duration: 01:30`)
 
 If there is an existing hold on any device targeted by the service call, it is replaced by the new hold.
 
 ## Related Attributes
+
 NeoStat climate entities reads the following attributes that are relevant to the Hold functionality:
+
 - `hold_on`: whether a hold is in action
 - `hold_temperature`: what temperature is being held (note that this will have a numeric value, even if there is no hold in effect - this is a function of the NeoStat, not of the integration)
-- `hold_duration`: shows how many hours:minutes are remaining on the hold.  If no hold is active, shows '0:00'.
+- `hold_duration`: shows how many hours:minutes are remaining on the hold. If no hold is active, shows '0:00'.
 
 # Supporting this project
-As per: [https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/133](https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/133) a few users found this useful and 
-wanted to support my work. I'm very grateful and humbled, thanks for the show of support! As such I've setup the 
+
+As per: [https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/133](https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/133) a few users found this useful and
+wanted to support my work. I'm very grateful and humbled, thanks for the show of support! As such I've setup the
 following to accept donations to support my work;
 
 [https://ko-fi.com/MindrustUK](https://ko-fi.com/MindrustUK)
 
 [https://liberapay.com/MindrustUK](https://liberapay.com/MindrustUK)
 
-If anyone from Heatmiser is reading; some more devices to build out a more complete hardware test suite to ensure 
+If anyone from Heatmiser is reading; some more devices to build out a more complete hardware test suite to ensure
 coverage would really help the project. Feel free to reach out if you want to help with this.
 
-This is not a completely solo project, and credit is due to anyone who contributed. Please see the GitHub commits 
-to support these awesome devs if there was any work that you would like to say thanks for. 
+This is not a completely solo project, and credit is due to anyone who contributed. Please see the GitHub commits
+to support these awesome devs if there was any work that you would like to say thanks for.
 
 I'd particularly like to call out
-- Andrius Štikonas: [https://gitlab.com/neohubapi/neohubapi/](https://gitlab.com/neohubapi/neohubapi/) or [https://stikonas.eu/](https://stikonas.eu/) for migrating the 
-original API calls to a Home Assistant compatible library, and maintaining its release.
-- ocrease: [https://github.com/ocrease](https://github.com/ocrease) for massive contributions to code clean up and 
-feature enhancement.
 
-Please consider supporting their efforts! 
+- Andrius Štikonas: [https://gitlab.com/neohubapi/neohubapi/](https://gitlab.com/neohubapi/neohubapi/) or [https://stikonas.eu/](https://stikonas.eu/) for migrating the
+  original API calls to a Home Assistant compatible library, and maintaining its release.
+- ocrease: [https://github.com/ocrease](https://github.com/ocrease) for massive contributions to code clean up and
+  feature enhancement.
+
+Please consider supporting their efforts!

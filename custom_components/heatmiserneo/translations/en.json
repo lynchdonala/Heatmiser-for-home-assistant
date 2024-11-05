@@ -1,56 +1,56 @@
 {
-    "config": {
-        "step": {
-            "user": {
-                "description": "Set up Heatmiser Neo integration.",
-                "title": "Heatmiser Neo",
-                "data": {
-                    "host": "Host",
-                    "port": "Port"
-                }
-            },
-            "zeroconf_confirm": {
-                "description": "Do you want to add the Heatmiser Neo `{name}` to Home Assistant?",
-                "title": "Heatmiser Neo"
-            }
-        },
-        "error": {
-            "cannot_connect": "Failed to connect"
+  "config": {
+    "step": {
+      "user": {
+        "description": "Set up Heatmiser Neo integration.",
+        "title": "Heatmiser Neo",
+        "data": {
+          "host": "Host",
+          "port": "Port"
         }
+      },
+      "zeroconf_confirm": {
+        "description": "Do you want to add the Heatmiser Neo `{name}` to Home Assistant?",
+        "title": "Heatmiser Neo"
+      }
     },
-    "options": {
-        "step": {
-            "init": {
-                "title": "Configure HVAC Modes",
-                "data": {
-                    "device": "Device",
-                    "hvac_modes": "HVAC Mode: (deselect all options to revert to default behaviour)",
-                    "more": "Configure another device"
-                },
-                "description": "Select a device and configure the HVAC modes"
-            }
-        },
-        "error": {}
-    },
-    "entity": {
-        "select": {
-            "timer_mode": {
-                "state": {
-                    "auto": "Auto",
-                    "standby": "Standby",
-                    "override_on": "Override On",
-                    "override_off": "Override Off"
-                }
-            },
-            "plug_mode": {
-                "state": {
-                    "auto": "Auto",
-                    "on": "On",
-                    "off": "Off",
-                    "override_on": "Override On",
-                    "override_off": "Override Off"
-                }
-            }
-        }
+    "error": {
+      "cannot_connect": "Failed to connect"
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Configure HVAC Modes",
+        "data": {
+          "device": "Device",
+          "hvac_modes": "HVAC Mode: (deselect all options to revert to default behaviour)",
+          "more": "Configure another device"
+        },
+        "description": "Select a device and configure the HVAC modes"
+      }
+    },
+    "error": {}
+  },
+  "entity": {
+    "select": {
+      "timer_mode": {
+        "state": {
+          "auto": "Auto",
+          "standby": "Standby",
+          "override_on": "Override On",
+          "override_off": "Override Off"
+        }
+      },
+      "plug_mode": {
+        "state": {
+          "auto": "Auto",
+          "on": "On",
+          "off": "Off",
+          "override_on": "Override On",
+          "override_off": "Override Off"
+        }
+      }
+    }
+  }
 }

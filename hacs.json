@@ -1,7 +1,7 @@
 {
-    "name": "Heatmiser Neo Integration",
-    "render_readme": true,
-    "zip_release": true,
-    "filename": "heatmiserneo.zip",
-    "hide_default_branch": true
+  "name": "Heatmiser Neo Integration",
+  "render_readme": true,
+  "zip_release": true,
+  "filename": "heatmiserneo.zip",
+  "hide_default_branch": true
 }

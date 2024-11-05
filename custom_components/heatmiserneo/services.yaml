@@ -9,8 +9,8 @@ hold_on:
     hold_duration:
       name: Hold Duration
       description: Set the duration for the hold (hh:mm:ss).
-      default: '01:00:00'
-      example: '01:00:00'
+      default: "01:00:00"
+      example: "01:00:00"
       selector:
         duration:
     hold_temperature:
@@ -42,8 +42,8 @@ timer_hold_on:
     hold_duration:
       name: Hold Duration
       description: Set the duration for the hold (hh:mm:ss).
-      default: '01:00:00'
-      example: '01:00:00'
+      default: "01:00:00"
+      example: "01:00:00"
       selector:
         duration:
     hold_state:

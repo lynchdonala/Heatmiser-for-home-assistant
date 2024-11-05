@@ -24,7 +24,7 @@ class HeatmiserNeoCoordinator(DataUpdateCoordinator[NeoHub]):
         super().__init__(
             hass,
             _LOGGER,
-            name=f"Heatmiser NeoHub : {hub._host}",
+            name=f"Heatmiser NeoHub : {hub._host}",  # noqa: SLF001
             update_interval=timedelta(seconds=30),
             always_update=True,
         )
