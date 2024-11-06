@@ -138,7 +138,7 @@ class HeatmiserNeoEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
             )
             return
         await self.entity_description.custom_functions.get(service_call.service)(
-            self.data, self._hub, service_call
+            self, service_call
         )
 
     async def async_cancel_away_or_holiday(self) -> None:
