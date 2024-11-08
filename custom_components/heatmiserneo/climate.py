@@ -71,8 +71,7 @@ async def async_setup_entry(
         _LOGGER.error("Coordinator data is None. Cannot set up climate entities")
         return
 
-    devices_data, system_data = coordinator.data
-    thermostats = {device.name: device for device in devices_data["neo_devices"]}
+    thermostats, system_data = coordinator.data
 
     hvac_config = entry.options.get(CONF_HVAC_MODES, {})
 

@@ -28,7 +28,7 @@ async def async_get_config_entry_diagnostics(
     hub = entry.runtime_data.hub
     coordinator = entry.runtime_data.coordinator
 
-    devices_data, system_data = coordinator.data
+    neo_devices, system_data = coordinator.data
     engineers_data = await hub.get_engineers()
     raw_live_data = await hub.get_live_data()
     raw_live_data = vars(raw_live_data)
@@ -37,15 +37,14 @@ async def async_get_config_entry_diagnostics(
         for dev in raw_live_data.get("devices", [])
     ]
     devices = await hub.get_devices()
-    devices_sns = {device.serial_number for device in devices_data["neo_devices"]}
+    devices_sns = {device.serial_number for device in neo_devices.values()}
     devices_sns = {n: "REDACTED-SN-" + str(i) for i, n in enumerate(devices_sns)}
-    zones = {device._data_.ZONE_NAME for device in devices_data["neo_devices"]}
+    zones = {device._data_.ZONE_NAME for device in neo_devices.values()}
     device_list = {z: await retrieve_zone_device_list(z, hub) for z in zones}
     return {
         "config_entry": async_redact_data(entry.as_dict(), TO_REDACT_CONFIG),
         "devices_data": [
-            convert_to_dict(device, devices_sns)
-            for device in devices_data["neo_devices"]
+            convert_to_dict(device, devices_sns) for device in neo_devices.values()
         ],
         "system_data": vars(system_data),
         "engineers": [vars(device) for _, device in engineers_data.__dict__.items()],

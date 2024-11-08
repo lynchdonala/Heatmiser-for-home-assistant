@@ -63,9 +63,7 @@ async def async_setup_entry(
         _LOGGER.error("Coordinator data is None. Cannot set up sensor entities")
         return
 
-    devices_data, system_data = coordinator.data
-
-    neo_devices = {device.name: device for device in devices_data["neo_devices"]}
+    neo_devices, system_data = coordinator.data
 
     _LOGGER.info("Adding Neo Sensors")
 

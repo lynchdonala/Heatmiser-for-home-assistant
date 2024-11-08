@@ -63,9 +63,8 @@ class HeatmiserNeoEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
     @property
     def data(self) -> NeoStat | None:
         """Helper to get the data for the current device."""
-        (devices, _) = self.coordinator.data
-        neo_devices = {device.name: device for device in devices["neo_devices"]}
-        return neo_devices[self._neodevice.name]
+        (neo_devices, _) = self.coordinator.data
+        return neo_devices.get(self._neodevice.name, None)
 
     @property
     def system_data(self):
@@ -76,7 +75,9 @@ class HeatmiserNeoEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
     @property
     def available(self):
         """Returns whether the entity is available or not."""
-        return self.entity_description.availability_fn(self.data)
+        if self.data:
+            return self.entity_description.availability_fn(self.data)
+        return False
 
     @property
     def unique_id(self) -> str:
