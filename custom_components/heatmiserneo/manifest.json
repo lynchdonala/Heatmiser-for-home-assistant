@@ -11,7 +11,5 @@
   "loggers": ["neohub"],
   "requirements": ["neohubapi==2.2"],
   "version": "v0.0.0",
-  "zeroconf": [
-    {"type":"_hap._tcp.local.", "name": "heatmiser neohub*"}
-  ]
+  "zeroconf": [{ "type": "_hap._tcp.local.", "name": "heatmiser neohub*" }]
 }

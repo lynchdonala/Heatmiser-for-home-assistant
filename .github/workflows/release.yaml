@@ -1,5 +1,6 @@
 name: Create release package
 
+# yamllint disable-line rule:truthy
 on:
   release:
     types: [published]
