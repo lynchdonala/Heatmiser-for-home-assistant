@@ -4,7 +4,6 @@
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import timedelta
 import logging
 from typing import Any
 
@@ -23,7 +22,7 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import EntityCategory
+from homeassistant.const import EntityCategory, UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -91,8 +90,10 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
     HeatmiserNeoSensorEntityDescription(
         key="heatmiser_neo_hold_time_sensor",
         name="Hold Time Remaining",
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
         value_fn=lambda device: (
-            device.hold_time if device.hold_on else timedelta(seconds=0)
+            int(device.hold_time.total_seconds() / 60) if device.hold_on else 0
         ),
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_HOLD
