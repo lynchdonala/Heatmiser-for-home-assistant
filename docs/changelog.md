@@ -1,5 +1,11 @@
 # Change Log
 
+## 20241111
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/213 by @ocrease, improves overall quality.
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/214 by @ocrease, fixing sensor type.
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/216 by @ocrease, improves robustness when devices are no longer avalible.
+
 ## 20241105
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/212 by @ocrease, should address NeoStat V1 in timeclock mode behaviours with Standby mode.
