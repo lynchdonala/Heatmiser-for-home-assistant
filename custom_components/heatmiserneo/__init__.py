@@ -11,7 +11,7 @@ import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_HOST, CONF_PORT
+from homeassistant.const import CONF_HOST, CONF_PORT, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 import homeassistant.helpers.config_validation as cv
@@ -21,6 +21,13 @@ from .coordinator import HeatmiserNeoCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
+PLATFORMS = [
+    Platform.BINARY_SENSOR,
+    Platform.BUTTON,
+    Platform.CLIMATE,
+    Platform.SELECT,
+    Platform.SENSOR,
+]
 
 type HeatmiserNeoConfigEntry = ConfigEntry[HeatmiserNeoData]
 
@@ -86,15 +93,20 @@ async def async_setup_entry(
     entry.runtime_data = HeatmiserNeoData(hub, coordinator)
 
     await coordinator.async_config_entry_first_refresh()
-    await hass.config_entries.async_forward_entry_setups(
-        entry, ["binary_sensor", "button", "climate", "select", "sensor"]
-    )
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True
 
 
+async def async_unload_entry(
+    hass: HomeAssistant, entry: HeatmiserNeoConfigEntry
+) -> bool:
+    """Unload a config entry."""
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+
 async def options_update_listener(
-    hass: HomeAssistant, config_entry: config_entries.ConfigEntry
+    hass: HomeAssistant, config_entry: HeatmiserNeoConfigEntry
 ):
     """Handle options update."""
     await hass.config_entries.async_reload(config_entry.entry_id)

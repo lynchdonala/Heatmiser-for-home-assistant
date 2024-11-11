@@ -64,7 +64,8 @@ class HeatmiserNeoCoordinator(DataUpdateCoordinator[NeoHub]):
                 if getattr(device, "serial_number", None) is None:
                     setattr(device, "serial_number", serial_number)
 
-            return devices_data, system_data
+            devices = {device.name: device for device in devices_data["neo_devices"]}
+            return devices, system_data
 
     def _get_device_sn(self, device_id: int) -> str:
         """Get a device serial number by its device id."""
