@@ -40,14 +40,6 @@ from .entity import HeatmiserNeoEntity, HeatmiserNeoEntityDescription
 
 _LOGGER = logging.getLogger(__name__)
 
-SENSORS_ENABLED = True
-OFFLINE_SENSOR_ENABLED = True
-ICON_BATTERY_LOW = "mdi:battery-low"
-ICON_BATTERY_OFF = "mdi:battery-off"
-ICON_BATTERY_FULL = "mdi:battery"
-ICON_NETWORK_OFFLINE = "mdi:network-off-outline"
-ICON_NETWORK_ONLINE = "mdi:network-outline"
-
 
 async def async_setup_entry(
     hass: HomeAssistant,
