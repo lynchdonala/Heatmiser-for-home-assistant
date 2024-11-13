@@ -1,5 +1,9 @@
 # Change Log
 
+## 20241113
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/218 by @ocrease, improves icons.
+
 ## 20241111
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/213 by @ocrease, improves overall quality.
