@@ -130,6 +130,16 @@ def _timer_mode(device: NeoStat) -> ModeSelectOption:
     return ModeSelectOption.AUTO
 
 
+def _timer_icon(device: NeoStat) -> str | None:
+    if device.hold_on:
+        if device.hold_temp == 1:
+            return "mdi:timer-stop"
+        return "mdi:timer-stop-outline"
+    if device.standby:
+        return "mdi:timer-off-outline"
+    return "mdi:timer" if device.timer_on else "mdi:timer-outline"
+
+
 def _plug_mode(device: NeoStat) -> ModeSelectOption:
     if not device.manual_off:
         if device.timer_on:
@@ -140,6 +150,18 @@ def _plug_mode(device: NeoStat) -> ModeSelectOption:
             return ModeSelectOption.OVERRIDE_ON
         return ModeSelectOption.OVERRIDE_OFF
     return ModeSelectOption.AUTO
+
+
+def _plug_icon(device: NeoStat) -> str | None:
+    if not device.manual_off:
+        if device.timer_on:
+            return "mdi:toggle-switch-variant"
+        return "mdi:toggle-switch-variant-off"
+    if device.hold_on:
+        if device.hold_temp == 1:
+            return "mdi:timer-stop"
+        return "mdi:timer-stop-outline"
+    return "mdi:timer" if device.timer_on else "mdi:timer-outline"
 
 
 async def async_timer_hold(device: NeoStat, hub: NeoHub, service_call: ServiceCall):
@@ -189,6 +211,7 @@ SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
         set_value_fn=lambda mode, dev, hub: TIMER_SET_MODE.get(ModeSelectOption(mode))(
             dev, hub
         ),
+        icon_fn=_timer_icon,
         translation_key="timer_mode",
         custom_functions={SERVICE_TIMER_HOLD_ON: async_timer_hold},
     ),
@@ -201,6 +224,7 @@ SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
         set_value_fn=lambda mode, dev, hub: PLUG_SET_MODE.get(ModeSelectOption(mode))(
             dev, hub
         ),
+        icon_fn=_plug_icon,
         translation_key="plug_mode",
         custom_functions={SERVICE_TIMER_HOLD_ON: async_plug_hold},
     ),

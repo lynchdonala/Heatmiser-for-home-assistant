@@ -27,6 +27,7 @@ class HeatmiserNeoEntityDescription(EntityDescription):
 
     setup_filter_fn: Callable[[NeoStat, Any], bool] = lambda dev, sys_data: True
     availability_fn: Callable[[NeoStat], bool] = lambda device: not device.offline
+    icon_fn: Callable[[NeoStat], str | None] | None = None
     # extra_attrs: list[str] | None = None
     custom_functions: (
         dict[str, Callable[[NeoStat, NeoHub, ServiceCall], Awaitable[None]]] | None
@@ -116,6 +117,13 @@ class HeatmiserNeoEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
     def should_poll(self) -> bool:
         """Don't poll - we fetch the data from the hub all at once."""
         return False
+
+    @property
+    def icon(self) -> str | None:
+        """Call icon function if defined."""
+        if self.entity_description.icon_fn:
+            return self.entity_description.icon_fn(self.data)
+        return None
 
     async def call_custom_action(self, service_call: ServiceCall) -> None:
         """Call a custom action specified in the entity description."""
