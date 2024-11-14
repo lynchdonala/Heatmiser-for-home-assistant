@@ -80,6 +80,6 @@ class HeatmiserNeoCoordinator(DataUpdateCoordinator[NeoHub]):
     ) -> None:
         """Call action on devices matching filter."""
         devices, _ = self.data
-        for device in devices["neo_devices"]:
+        for device in devices.values():
             if filter(device):
                 action(device)

@@ -45,8 +45,7 @@
           "on": "On",
           "off": "Off",
           "override_on": "Override On",
-          "override_off": "Override Off",
-          "away": "Away"
+          "override_off": "Override Off"
         }
       }
     }

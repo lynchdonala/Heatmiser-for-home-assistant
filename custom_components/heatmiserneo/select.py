@@ -107,11 +107,11 @@ async def set_plug_auto(entity: HeatmiserNeoSelectEntity):
     await entity.async_cancel_away_or_holiday()
 
 
-async def set_plug_away(entity: HeatmiserNeoSelectEntity):
-    """Set device back to auto based on its current state."""
-    dev = entity.data
-    set_plug_override(entity, dev.hold_temp == 1, 0)
-    await entity.async_set_away_mode()
+# async def set_plug_away(entity: HeatmiserNeoSelectEntity):
+#     """Set device back to auto based on its current state."""
+#     dev = entity.data
+#     set_plug_override(entity, dev.hold_temp == 1, 0)
+#     await entity.async_set_away_mode()
 
 
 async def set_plug_override(
@@ -168,6 +168,10 @@ def _timer_mode(device: NeoStat) -> ModeSelectOption:
 
 
 def _timer_icon(device: NeoStat) -> str | None:
+    if device.away or device.holiday:
+        if device.standby:
+            return "mdi:timer-off-outline"
+        return "mdi:account-arrow-right"
     if device.hold_on:
         if device.hold_temp == 1:
             return "mdi:timer-stop"
@@ -182,8 +186,8 @@ def _plug_mode(device: NeoStat) -> ModeSelectOption:
         if device.timer_on:
             return ModeSelectOption.MANUAL_ON
         return ModeSelectOption.MANUAL_OFF
-    if device.away or device.holiday:
-        return ModeSelectOption.AWAY
+    # if device.away or device.holiday:
+    #     return ModeSelectOption.AWAY
     if device.hold_on:
         if device.hold_temp == 1:
             return ModeSelectOption.OVERRIDE_ON
@@ -201,6 +205,7 @@ def _plug_icon(device: NeoStat) -> str | None:
             return "mdi:timer-stop"
         return "mdi:timer-stop-outline"
     return "mdi:timer" if device.timer_on else "mdi:timer-outline"
+
 
 async def async_timer_hold(entity: HeatmiserNeoSelectEntity, service_call: ServiceCall):
     """Set override with custom duration."""
@@ -236,7 +241,7 @@ PLUG_SET_MODE = {
     ModeSelectOption.OVERRIDE_OFF: lambda entity: set_plug_override(entity, False),
     ModeSelectOption.MANUAL_ON: lambda entity: set_plug_manual(entity, True),
     ModeSelectOption.MANUAL_OFF: lambda entity: set_plug_manual(entity, False),
-    ModeSelectOption.AWAY: set_plug_away,
+    # ModeSelectOption.AWAY: set_plug_away,
 }
 
 SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
