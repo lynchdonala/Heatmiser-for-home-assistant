@@ -23,6 +23,7 @@ from .const import (
     HEATMISER_TYPE_IDS_AWAY,
     HEATMISER_TYPE_IDS_HOLD,
     HEATMISER_TYPE_IDS_STANDBY,
+    HEATMISER_TYPE_IDS_THERMOSTAT,
     HEATMISER_TYPE_IDS_TIMER,
 )
 from .entity import HeatmiserNeoEntity, HeatmiserNeoEntityDescription
@@ -130,6 +131,17 @@ BINARY_SENSORS: tuple[HeatmiserNeoBinarySensorEntityDescription, ...] = (
         value_fn=lambda device: device.holiday,
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_AWAY
+        ),
+    ),
+    HeatmiserNeoBinarySensorEntityDescription(
+        key="heatmiser_neo_floor_limit",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        name="Floor Limit Reached",
+        value_fn=lambda device: device.floor_limit,
+        setup_filter_fn=lambda device, _: (
+            device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT
+            and not device.time_clock_mode
+            and device.current_floor_temperature < 127
         ),
     ),
 )
