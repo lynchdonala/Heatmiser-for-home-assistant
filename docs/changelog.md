@@ -1,5 +1,9 @@
 # Change Log
 
+## 20241115
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/207 by @ocrease, improves away mode.
+
 ## 20241113
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/218 by @ocrease, improves icons.
