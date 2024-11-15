@@ -93,6 +93,7 @@ class ModeSelectOption(str, enum.Enum):
     STANDBY = "standby"
     MANUAL_ON = "on"
     MANUAL_OFF = "off"
+    AWAY = "away"
 
 
 HEATMISER_TEMPERATURE_UNIT_HA_UNIT = {

@@ -2,10 +2,11 @@
 """Coordinator object for the HeatmiserNeo integration."""
 
 import asyncio
+from collections.abc import Callable
 from datetime import timedelta
 import logging
 
-from neohubapi.neohub import NeoHub
+from neohubapi.neohub import NeoHub, NeoStat
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -73,3 +74,12 @@ class HeatmiserNeoCoordinator(DataUpdateCoordinator[NeoHub]):
         return self._device_serial_numbers.get(device_id, {}).get(
             "serial_number", "UNKNOWN"
         )
+
+    def update_in_memory_state(
+        self, action: Callable[[NeoStat], None], filter: Callable[[NeoStat], bool]
+    ) -> None:
+        """Call action on devices matching filter."""
+        devices, _ = self.data
+        for device in devices.values():
+            if filter(device):
+                action(device)

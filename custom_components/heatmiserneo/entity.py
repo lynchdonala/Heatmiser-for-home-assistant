@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from functools import partial
 import logging
 from typing import Any
 
@@ -15,8 +16,9 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import EntityDescription
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, HEATMISER_PRODUCT_LIST
+from .const import DOMAIN, HEATMISER_PRODUCT_LIST, HEATMISER_TYPE_IDS_AWAY
 from .coordinator import HeatmiserNeoCoordinator
+from .helpers import cancel_holiday, set_away
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,7 +32,8 @@ class HeatmiserNeoEntityDescription(EntityDescription):
     icon_fn: Callable[[NeoStat], str | None] | None = None
     # extra_attrs: list[str] | None = None
     custom_functions: (
-        dict[str, Callable[[NeoStat, NeoHub, ServiceCall], Awaitable[None]]] | None
+        dict[str, Callable[[type[HeatmiserNeoEntity], ServiceCall], Awaitable[None]]]
+        | None
     ) = None
 
 
@@ -135,8 +138,35 @@ class HeatmiserNeoEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
             )
             return
         await self.entity_description.custom_functions.get(service_call.service)(
-            self.data, self._hub, service_call
+            self, service_call
         )
+
+    async def async_cancel_away_or_holiday(self) -> None:
+        """Cancel away/holiday mode."""
+        if _device_supports_away(self.data):
+            dev = self.data
+            if dev.away:
+                await self._hub.set_away(False)
+                self.coordinator.update_in_memory_state(
+                    partial(set_away, False),
+                    _device_supports_away,
+                )
+            if dev.holiday:
+                await self._hub.cancel_holiday(False)
+                self.coordinator.update_in_memory_state(
+                    cancel_holiday,
+                    _device_supports_away,
+                )
+
+    async def async_set_away_mode(self) -> None:
+        """Set away mode."""
+        if _device_supports_away(self.data):
+            dev = self.data
+            if not (dev.away or dev.holiday):
+                await self._hub.set_away(True)
+                self.coordinator.update_in_memory_state(
+                    partial(set_away, True), _device_supports_away
+                )
 
 
 async def call_custom_action(
@@ -144,3 +174,7 @@ async def call_custom_action(
 ) -> None:
     """Call a custom action specified in the entity description."""
     await entity.call_custom_action(service_call)
+
+
+def _device_supports_away(dev: NeoStat) -> bool:
+    return dev.device_type in HEATMISER_TYPE_IDS_AWAY
