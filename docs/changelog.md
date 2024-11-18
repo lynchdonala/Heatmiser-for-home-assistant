@@ -1,5 +1,9 @@
 # Change Log
 
+## 20241118
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/219 by @ocrease, Additional floor related parameters.
+
 ## 20241115
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/207 by @ocrease, improves away mode.
