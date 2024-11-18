@@ -47,6 +47,24 @@
           "override_on": "Override On",
           "override_off": "Override Off"
         }
+      },
+      "switching_differential": {
+        "name": "Switching Differential",
+        "state": {
+          "0": "0.5°",
+          "1": "1°",
+          "2": "2°",
+          "3": "3°"
+        }
+      },
+      "preheat_time": {
+        "name": "Optimum Start",
+        "state": {
+          "0": "None",
+          "1": "1h",
+          "2": "2h",
+          "3": "3h"
+        }
       }
     }
   }

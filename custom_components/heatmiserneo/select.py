@@ -13,7 +13,8 @@ from typing import Final
 from neohubapi.neohub import NeoHub, NeoStat
 import voluptuous as vol
 
-from homeassistant.components.select import SelectEntity
+from homeassistant.components.select import SelectEntity, SelectEntityDescription
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, ServiceCall, callback
 from homeassistant.helpers import entity_platform
 import homeassistant.helpers.config_validation as cv
@@ -27,6 +28,7 @@ from .const import (
     DEFAULT_PLUG_HOLD_DURATION,
     DEFAULT_TIMER_HOLD_DURATION,
     HEATMISER_TYPE_IDS_PLUG,
+    HEATMISER_TYPE_IDS_THERMOSTAT,
     HEATMISER_TYPE_IDS_TIMER,
     SERVICE_TIMER_HOLD_ON,
     ModeSelectOption,
@@ -41,7 +43,9 @@ _LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, kw_only=True)
-class HeatmiserNeoSelectEntityDescription(HeatmiserNeoEntityDescription):
+class HeatmiserNeoSelectEntityDescription(
+    HeatmiserNeoEntityDescription, SelectEntityDescription
+):
     """Class to describe an Heatmiser Neo select entity."""
 
     options: list[str]
@@ -227,6 +231,27 @@ async def async_plug_hold(entity: HeatmiserNeoSelectEntity, service_call: Servic
     entity.coordinator.async_update_listeners()
 
 
+async def async_set_switching_differential(
+    val: str, entity: HeatmiserNeoEntity
+) -> None:
+    """Set the switching differential on a device."""
+    message = {"SET_DIFF": [int(val), [entity.data.name]]}
+    # TODO this should be in the API
+    await entity.coordinator.hub._send(message)  # noqa: SLF001
+    setattr(entity.data._data_, "SWITCHING DIFFERENTIAL", int(val))
+
+
+async def async_set_preheat(
+    val: str,
+    entity: HeatmiserNeoEntity,
+) -> None:
+    """Set the maximum preheat time on a device."""
+    message = {"SET_PREHEAT": [int(val), [entity.data.name]]}
+    # TODO this should be in the API
+    await entity.coordinator.hub._send(message)  # noqa: SLF001
+    setattr(entity.data._data_, "MAX_PREHEAT", int(val))
+
+
 TIMER_SET_MODE = {
     ModeSelectOption.AUTO: set_timer_auto,
     ModeSelectOption.OVERRIDE_ON: lambda entity: set_timer_override(entity, True),
@@ -274,6 +299,32 @@ SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
         icon_fn=_plug_icon,
         translation_key="plug_mode",
         custom_functions={SERVICE_TIMER_HOLD_ON: async_plug_hold},
+    ),
+    HeatmiserNeoSelectEntityDescription(
+        key="heatmiser_neo_switching_differential",
+        options=[str(n) for n in range(4)],
+        entity_category=EntityCategory.CONFIG,
+        entity_registry_enabled_default=False,
+        setup_filter_fn=lambda device, _: (
+            device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT
+            and not device.time_clock_mode
+        ),
+        value_fn=lambda dev: str(getattr(dev._data_, "SWITCHING DIFFERENTIAL")),
+        set_value_fn=async_set_switching_differential,
+        translation_key="switching_differential",
+    ),
+    HeatmiserNeoSelectEntityDescription(
+        key="heatmiser_neo_preheat_time",
+        options=[str(n) for n in range(4)],
+        entity_category=EntityCategory.CONFIG,
+        entity_registry_enabled_default=False,
+        setup_filter_fn=lambda device, _: (
+            device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT
+            and not device.time_clock_mode
+        ),
+        value_fn=lambda dev: str(dev._data_.MAX_PREHEAT),
+        set_value_fn=async_set_preheat,
+        translation_key="preheat_time",
     ),
 )
 
