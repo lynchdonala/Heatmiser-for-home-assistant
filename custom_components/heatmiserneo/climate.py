@@ -336,8 +336,6 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
     def hvac_action(self):
         # See: https://developers.home-assistant.io/docs/core/entity/climate/
         """The current HVAC action (heating, cooling)."""
-        if self.data.standby:
-            return HVACAction.OFF
         if self.data.preheat_active:
             return HVACAction.PREHEATING
         if self.data.cool_on:
@@ -346,6 +344,10 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
             return HVACAction.HEATING
         if self.data.fan_speed != "Off":
             return HVACAction.FAN  # Should fan be combined? Ie can you have fan on and other functions together?
+        if self.data.standby or self.data.away or self.data.holiday:
+            if self.data._data_.FROST_TEMP >= 127:
+                # If the frost protection temperature is not set, then the thermostat is truly off.
+                return HVACAction.OFF
         return HVACAction.IDLE
 
     @property
@@ -437,17 +439,26 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
     @property
     def target_temperature(self):
         """Return the temperature we try to reach."""
-        return float(self.data.target_temperature)
+        target = float(self.data.target_temperature)
+        if self.hvac_action != HVACAction.OFF and target < 255:
+            return target
+        return None
 
     @property
     def target_temperature_high(self):
         """Return the temperature we try to reach."""
-        return float(self.data.cool_temp)
+        target = float(self.data.cool_temp)
+        if self.hvac_action != HVACAction.OFF and target < 255:
+            return target
+        return None
 
     @property
     def target_temperature_low(self):
         """Return the temperature we try to reach."""
-        return float(self.data.target_temperature)
+        target = float(self.data.target_temperature)
+        if self.hvac_action() != HVACAction.OFF and target < 255:
+            return target
+        return None
 
     @property
     def preset_mode(self) -> str:
