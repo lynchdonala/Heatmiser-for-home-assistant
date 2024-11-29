@@ -1,5 +1,9 @@
 # Change Log
 
+## 20241129
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/220 by @ocrease, fixes for thermostat operation when in standby.
+
 ## 20241118
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/219 by @ocrease, Additional floor related parameters.
