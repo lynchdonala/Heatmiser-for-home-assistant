@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-only
 """Heatmiser Neo Button platform."""
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 import logging
 
@@ -14,11 +15,16 @@ from homeassistant.components.button import (
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from . import HeatmiserNeoConfigEntry
 from .const import HEATMISER_TYPE_IDS_IDENTIFY
-from .entity import HeatmiserNeoEntity, HeatmiserNeoEntityDescription
+from .coordinator import HeatmiserNeoCoordinator
+from .entity import (
+    HeatmiserNeoEntity,
+    HeatmiserNeoEntityDescription,
+    HeatmiserNeoHubEntity,
+    HeatmiserNeoHubEntityDescription,
+)
 
 
 async def async_setup_entry(
@@ -34,7 +40,8 @@ async def async_setup_entry(
         _LOGGER.error("Coordinator data is None. Cannot set up button entities")
         return
 
-    neo_devices, system_data = coordinator.data
+    neo_devices, _ = coordinator.data
+    system_data = coordinator.system_data
 
     _LOGGER.info("Adding Neo Device Buttons")
 
@@ -43,6 +50,12 @@ async def async_setup_entry(
         for description in BUTTONS
         for neodevice in neo_devices.values()
         if description.setup_filter_fn(neodevice, system_data)
+    )
+
+    async_add_entities(
+        HeatmiserNeoHubButton(coordinator, hub, description)
+        for description in HUB_BUTTONS
+        if description.setup_filter_fn(coordinator)
     )
 
 
@@ -55,6 +68,17 @@ class HeatmiserNeoButtonEntityDescription(
 ):
     """Describes a button entity."""
 
+    press_fn: Callable[[NeoStat], Awaitable[None]]
+
+
+@dataclass(frozen=True, kw_only=True)
+class HeatmiserNeoHubButtonEntityDescription(
+    HeatmiserNeoHubEntityDescription, ButtonEntityDescription
+):
+    """Describes a button entity."""
+
+    press_fn: Callable[[HeatmiserNeoCoordinator], Awaitable[None]]
+
 
 BUTTONS: tuple[HeatmiserNeoButtonEntityDescription, ...] = (
     HeatmiserNeoButtonEntityDescription(
@@ -64,6 +88,17 @@ BUTTONS: tuple[HeatmiserNeoButtonEntityDescription, ...] = (
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_IDENTIFY
         ),
+        press_fn=lambda dev: dev.identify(),
+    ),
+)
+
+
+HUB_BUTTONS: tuple[HeatmiserNeoHubButtonEntityDescription, ...] = (
+    HeatmiserNeoHubButtonEntityDescription(
+        key="heatmiser_neohub_identify_button",
+        device_class=ButtonDeviceClass.IDENTIFY,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        press_fn=lambda coordinator: coordinator.hub.identify(),
     ),
 )
 
@@ -74,7 +109,7 @@ class HeatmiserNeoButton(HeatmiserNeoEntity, ButtonEntity):
     def __init__(
         self,
         neostat: NeoStat,
-        coordinator: DataUpdateCoordinator,
+        coordinator: HeatmiserNeoCoordinator,
         hub: NeoHub,
         entity_description: HeatmiserNeoButtonEntityDescription,
     ) -> None:
@@ -88,4 +123,25 @@ class HeatmiserNeoButton(HeatmiserNeoEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         """Handle the button press."""
-        await self._neodevice.identify()
+        await self.entity_description.press_fn(self.data)
+
+
+class HeatmiserNeoHubButton(HeatmiserNeoHubEntity, ButtonEntity):
+    """Heatmiser Neo button entity."""
+
+    def __init__(
+        self,
+        coordinator: HeatmiserNeoCoordinator,
+        hub: NeoHub,
+        entity_description: HeatmiserNeoButtonEntityDescription,
+    ) -> None:
+        """Initialize Heatmiser Neo button entity."""
+        super().__init__(
+            coordinator,
+            hub,
+            entity_description,
+        )
+
+    async def async_press(self) -> None:
+        """Handle the button press."""
+        await self.entity_description.press_fn(self.coordinator)

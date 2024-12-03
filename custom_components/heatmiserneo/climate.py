@@ -71,7 +71,8 @@ async def async_setup_entry(
         _LOGGER.error("Coordinator data is None. Cannot set up climate entities")
         return
 
-    thermostats, system_data = coordinator.data
+    neo_devices, _ = coordinator.data
+    system_data = coordinator.system_data
 
     hvac_config = entry.options.get(CONF_HVAC_MODES, {})
 
@@ -79,11 +80,11 @@ async def async_setup_entry(
     for config in hvac_config:
         _LOGGER.debug(
             "Overriding the default HVAC modes from %s to %s for the %s climate entity",
-            thermostats[config].available_modes,
+            neo_devices[config].available_modes,
             hvac_config[config],
             config,
         )
-        thermostats[config].available_modes = hvac_config[config]
+        neo_devices[config].available_modes = hvac_config[config]
 
     temperature_unit = HEATMISER_TEMPERATURE_UNIT_HA_UNIT.get(
         system_data.CORF, UnitOfTemperature.CELSIUS
@@ -102,7 +103,7 @@ async def async_setup_entry(
             float(temperature_step),
         )
         for description in CLIMATE
-        for neodevice in thermostats.values()
+        for neodevice in neo_devices.values()
         if description.setup_filter_fn(neodevice, system_data)
     )
 

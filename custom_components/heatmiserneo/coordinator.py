@@ -83,3 +83,9 @@ class HeatmiserNeoCoordinator(DataUpdateCoordinator[NeoHub]):
         for device in devices.values():
             if filter(device):
                 action(device)
+
+    @property
+    def system_data(self):
+        """Helper to get the data for the current device."""
+        (_, system_data) = self.data
+        return system_data

@@ -16,7 +16,6 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from . import HeatmiserNeoConfigEntry
 from .const import (
@@ -26,7 +25,13 @@ from .const import (
     HEATMISER_TYPE_IDS_THERMOSTAT,
     HEATMISER_TYPE_IDS_TIMER,
 )
-from .entity import HeatmiserNeoEntity, HeatmiserNeoEntityDescription
+from .coordinator import HeatmiserNeoCoordinator
+from .entity import (
+    HeatmiserNeoEntity,
+    HeatmiserNeoEntityDescription,
+    HeatmiserNeoHubEntity,
+    HeatmiserNeoHubEntityDescription,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,7 +49,8 @@ async def async_setup_entry(
         _LOGGER.error("Coordinator data is None. Cannot set up sensor entities")
         return
 
-    neo_devices, system_data = coordinator.data
+    neo_devices, _ = coordinator.data
+    system_data = coordinator.system_data
 
     _LOGGER.info("Adding Neo Binary Sensors")
 
@@ -55,6 +61,12 @@ async def async_setup_entry(
         if description.setup_filter_fn(neodevice, system_data)
     )
 
+    async_add_entities(
+        HeatmiserNeoHubBinarySensor(coordinator, hub, description)
+        for description in HUB_BINARY_SENSORS
+        if description.setup_filter_fn(coordinator)
+    )
+
 
 @dataclass(frozen=True, kw_only=True)
 class HeatmiserNeoBinarySensorEntityDescription(
@@ -63,6 +75,15 @@ class HeatmiserNeoBinarySensorEntityDescription(
     """Describes a button entity."""
 
     value_fn: Callable[[NeoStat], bool]
+
+
+@dataclass(frozen=True, kw_only=True)
+class HeatmiserNeoHubBinarySensorEntityDescription(
+    HeatmiserNeoHubEntityDescription, BinarySensorEntityDescription
+):
+    """Describes a button entity."""
+
+    value_fn: Callable[[HeatmiserNeoCoordinator], bool]
 
 
 BINARY_SENSORS: tuple[HeatmiserNeoBinarySensorEntityDescription, ...] = (
@@ -146,18 +167,28 @@ BINARY_SENSORS: tuple[HeatmiserNeoBinarySensorEntityDescription, ...] = (
     ),
 )
 
+HUB_BINARY_SENSORS: tuple[HeatmiserNeoHubBinarySensorEntityDescription, ...] = (
+    HeatmiserNeoHubBinarySensorEntityDescription(
+        key="heatmiser_neohub_dst_on",
+        name="DST",
+        entity_registry_enabled_default=False,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda coordinator: coordinator.system_data.DST_ON,
+    ),
+)
+
 
 class HeatmiserNeoBinarySensor(HeatmiserNeoEntity, BinarySensorEntity):
-    """Heatmiser Neo button entity."""
+    """Heatmiser Neo binary entity."""
 
     def __init__(
         self,
         neostat: NeoStat,
-        coordinator: DataUpdateCoordinator,
+        coordinator: HeatmiserNeoCoordinator,
         hub: NeoHub,
         entity_description: HeatmiserNeoBinarySensorEntityDescription,
     ) -> None:
-        """Initialize Heatmiser Neo button entity."""
+        """Initialize Heatmiser Neo binary entity."""
         super().__init__(
             neostat,
             coordinator,
@@ -169,3 +200,25 @@ class HeatmiserNeoBinarySensor(HeatmiserNeoEntity, BinarySensorEntity):
     def is_on(self) -> bool | None:
         """Return true if the binary sensor is on."""
         return self.entity_description.value_fn(self.data)
+
+
+class HeatmiserNeoHubBinarySensor(HeatmiserNeoHubEntity, BinarySensorEntity):
+    """Heatmiser Neo binary entity."""
+
+    def __init__(
+        self,
+        coordinator: HeatmiserNeoCoordinator,
+        hub: NeoHub,
+        entity_description: HeatmiserNeoHubBinarySensorEntityDescription,
+    ) -> None:
+        """Initialize Heatmiser Neo binary entity."""
+        super().__init__(
+            coordinator,
+            hub,
+            entity_description,
+        )
+
+    @property
+    def is_on(self) -> bool | None:
+        """Return true if the binary sensor is on."""
+        return self.entity_description.value_fn(self.coordinator)
