@@ -144,6 +144,16 @@ BINARY_SENSORS: tuple[HeatmiserNeoBinarySensorEntityDescription, ...] = (
             and device.current_floor_temperature < 127
         ),
     ),
+    HeatmiserNeoBinarySensorEntityDescription(
+        key="heatmiser_neo_temporary_set",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        name="Temporary Set",
+        value_fn=lambda device: device.temporary_set_flag,
+        setup_filter_fn=lambda device, _: (
+            device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT
+        ),
+    ),
 )
 
 
