@@ -28,7 +28,8 @@ async def async_get_config_entry_diagnostics(
     hub = entry.runtime_data.hub
     coordinator = entry.runtime_data.coordinator
 
-    neo_devices, system_data = coordinator.data
+    neo_devices, _ = coordinator.data
+    system_data = coordinator.system_data
     engineers_data = await hub.get_engineers()
     raw_live_data = await hub.get_live_data()
     raw_live_data = vars(raw_live_data)

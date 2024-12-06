@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-only
 """The Heatmiser Neo integration."""
 
-import asyncio
 from dataclasses import dataclass
 from datetime import timedelta
 import logging
@@ -12,10 +11,8 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT, Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import device_registry as dr
 import homeassistant.helpers.config_validation as cv
 
-from .const import DOMAIN, HEATMISER_HUB_PRODUCT_LIST
 from .coordinator import HeatmiserNeoCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -27,6 +24,7 @@ PLATFORMS = [
     Platform.NUMBER,
     Platform.SELECT,
     Platform.SENSOR,
+    Platform.SWITCH,
 ]
 
 type HeatmiserNeoConfigEntry = ConfigEntry[HeatmiserNeoData]
@@ -52,39 +50,6 @@ async def async_setup_entry(
     # Make this configurable or retrieve from an API later.
     hub_serial_number = f"NEOHUB-SN:000000-{host}"
     hub = NeoHub(host, port)
-
-    # TODO: Split this out to it's own HUB / Bridge thing.
-    _LOGGER.debug("Attempting to setup Heatmiser Neo Hub Device: %s:%s", host, port)
-    init_system_data = await hub.get_system()
-    _LOGGER.debug("system_data: %s", init_system_data)
-
-    device_registry = dr.async_get(hass)
-    device_registry.async_get_or_create(
-        config_entry_id=entry.entry_id,
-        identifiers={(DOMAIN, hub_serial_number)},
-        manufacturer="Heatmiser",
-        model=f"{HEATMISER_HUB_PRODUCT_LIST[init_system_data.HUB_TYPE]}",
-        name=f"NeoHub - {host}",
-        serial_number=hub_serial_number,
-        sw_version=init_system_data.HUB_VERSION,
-    )
-
-    # TODO: NTP Fixes as per below.
-    """"
-    TODO: Make this configurable, and move it from here
-    workaround to re-enable NTP after a power outage (or any other reason)
-    where WAN connectivity will not have been restored by the time the NeoHub has fully started.
-    """
-    if getattr(init_system_data, "NTP_ON") != "Running":
-        """ Enable NTP """
-        _LOGGER.warning("NTP disabled. Enabling")
-
-        set_ntp_enabled_task = asyncio.create_task(hub.set_ntp(True))
-        response = await set_ntp_enabled_task
-        if response:
-            _LOGGER.info("Enabled NTP (response: %s)", response)
-    else:
-        _LOGGER.debug("NTP enabled")
 
     coordinator = HeatmiserNeoCoordinator(hass, hub)
 

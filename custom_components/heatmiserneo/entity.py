@@ -16,7 +16,12 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import EntityDescription
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, HEATMISER_PRODUCT_LIST, HEATMISER_TYPE_IDS_AWAY
+from .const import (
+    DOMAIN,
+    HEATMISER_HUB_PRODUCT_LIST,
+    HEATMISER_PRODUCT_LIST,
+    HEATMISER_TYPE_IDS_AWAY,
+)
 from .coordinator import HeatmiserNeoCoordinator
 from .helpers import cancel_holiday, set_away
 
@@ -29,6 +34,21 @@ class HeatmiserNeoEntityDescription(EntityDescription):
 
     setup_filter_fn: Callable[[NeoStat, Any], bool] = lambda dev, sys_data: True
     availability_fn: Callable[[NeoStat], bool] = lambda device: not device.offline
+    icon_fn: Callable[[NeoStat], str | None] | None = None
+    # extra_attrs: list[str] | None = None
+    custom_functions: (
+        dict[str, Callable[[type[HeatmiserNeoEntity], ServiceCall], Awaitable[None]]]
+        | None
+    ) = None
+
+
+@dataclass(frozen=True, kw_only=True)
+class HeatmiserNeoHubEntityDescription(EntityDescription):
+    """Describes Heatmiser Neo Hub entity."""
+
+    setup_filter_fn: Callable[[HeatmiserNeoCoordinator], bool] = (
+        lambda coordinator: True
+    )
     icon_fn: Callable[[NeoStat], str | None] | None = None
     # extra_attrs: list[str] | None = None
     custom_functions: (
@@ -73,8 +93,7 @@ class HeatmiserNeoEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
     @property
     def system_data(self):
         """Helper to get the data for the current device."""
-        (_, system_data) = self.coordinator.data
-        return system_data
+        return self.coordinator.system_data
 
     @property
     def available(self):
@@ -167,6 +186,69 @@ class HeatmiserNeoEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
                 self.coordinator.update_in_memory_state(
                     partial(set_away, True), _device_supports_away
                 )
+
+
+class HeatmiserNeoHubEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
+    """Defines a base HeatmiserNeoHub entity."""
+
+    entity_description: HeatmiserNeoHubEntityDescription
+    _attr_has_entity_name = True
+
+    def __init__(
+        self,
+        coordinator: HeatmiserNeoCoordinator,
+        hub: NeoHub,
+        entity_description: HeatmiserNeoHubEntityDescription,
+    ) -> None:
+        """Initialize the HeatmiserNeoHub entity."""
+        super().__init__(coordinator)
+        _LOGGER.debug(
+            "Creating %s-%s",
+            type(self).__name__,
+            entity_description.key,
+        )
+        self._key = entity_description.key
+        self._hub = hub
+        self.entity_description = entity_description
+
+    @property
+    def available(self):
+        """Returns whether the entity is available or not."""
+        return True
+
+    @property
+    def unique_id(self) -> str:
+        """Return the unique ID for this entity."""
+        return f"{self.coordinator.serial_number}_{self._key}"
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device information about this Heatmiser Neo instance."""
+        return DeviceInfo(
+            identifiers={
+                (
+                    DOMAIN,
+                    f"{self.coordinator.serial_number}",
+                )
+            },
+            name=f"NeoHub - {self._hub._host}",  # noqa: SLF001
+            manufacturer="Heatmiser",
+            model=f"{HEATMISER_HUB_PRODUCT_LIST[self.coordinator.system_data.HUB_TYPE]}",
+            serial_number=self.coordinator.serial_number,
+            sw_version=self.coordinator.system_data.HUB_VERSION,
+        )
+
+    @property
+    def should_poll(self) -> bool:
+        """Don't poll - we fetch the data from the hub all at once."""
+        return False
+
+    @property
+    def icon(self) -> str | None:
+        """Call icon function if defined."""
+        if self.entity_description.icon_fn:
+            return self.entity_description.icon_fn(self.data)
+        return None
 
 
 async def call_custom_action(

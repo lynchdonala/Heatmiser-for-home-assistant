@@ -33,9 +33,12 @@ from .const import (
     SERVICE_TIMER_HOLD_ON,
     ModeSelectOption,
 )
+from .coordinator import HeatmiserNeoCoordinator
 from .entity import (
     HeatmiserNeoEntity,
     HeatmiserNeoEntityDescription,
+    HeatmiserNeoHubEntity,
+    HeatmiserNeoHubEntityDescription,
     call_custom_action,
 )
 
@@ -51,6 +54,17 @@ class HeatmiserNeoSelectEntityDescription(
     options: list[str]
     value_fn: Callable[[NeoStat], str]
     set_value_fn: Callable[[str, HeatmiserNeoSelectEntity], Awaitable[None]]
+
+
+@dataclass(frozen=True, kw_only=True)
+class HeatmiserNeoHubSelectEntityDescription(
+    HeatmiserNeoHubEntityDescription, SelectEntityDescription
+):
+    """Class to describe an Heatmiser Neo select entity."""
+
+    options: list[str]
+    value_fn: Callable[[HeatmiserNeoCoordinator], str]
+    set_value_fn: Callable[[str, HeatmiserNeoHubSelectEntity], Awaitable[None]]
 
 
 async def set_timer_auto(entity: HeatmiserNeoSelectEntity):
@@ -169,6 +183,33 @@ def _timer_mode(device: NeoStat) -> ModeSelectOption:
     if device.standby:
         return ModeSelectOption.STANDBY
     return ModeSelectOption.AUTO
+
+
+def _dst_mode(coordinator: HeatmiserNeoCoordinator) -> str:
+    tzstr = coordinator.system_data.TIMEZONESTR
+    if not coordinator.system_data.DST_AUTO or tzstr == "":
+        if coordinator.system_data.DST_ON:
+            return "On"
+        return "Off"
+    tzstr = coordinator.system_data.TIMEZONESTR
+    if not tzstr:
+        return "UK"
+    return tzstr
+
+
+async def async_set_dst_mode(coordinator: HeatmiserNeoCoordinator, option: str):
+    """Update the DST mode."""
+    if option in ("Off", "On"):
+        dst_on = option == "On"
+        await async_set_dst(coordinator)
+        await coordinator.hub.manual_dst(dst_on)
+        setattr(coordinator.system_data, "DST_AUTO", False)
+        setattr(coordinator.system_data, "DST_ON", dst_on)
+        setattr(coordinator.system_data, "TIMEZONESTR", "")
+    else:
+        await async_set_dst(coordinator, option)
+        setattr(coordinator.system_data, "DST_AUTO", True)
+        setattr(coordinator.system_data, "TIMEZONESTR", option)
 
 
 def _timer_icon(device: NeoStat) -> str | None:
@@ -328,6 +369,65 @@ SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
     ),
 )
 
+HUB_SELECT: Final[tuple[HeatmiserNeoHubSelectEntityDescription, ...]] = (
+    HeatmiserNeoHubSelectEntityDescription(
+        key="heatmiser_neohub_dst_rule",
+        name="DST Rule",
+        options=["UK", "EU", "NZ", "Off", "On"],
+        value_fn=_dst_mode,
+        set_value_fn=lambda mode, entity: async_set_dst_mode(entity.coordinator, mode),
+    ),
+    HeatmiserNeoHubSelectEntityDescription(
+        key="heatmiser_neohub_time_zone",
+        # name="DST Rule",
+        options=[
+            "tz-1200",
+            "tz-1100",
+            "tz-1000",
+            "tz-950",
+            "tz-900",
+            "tz-800",
+            "tz-700",
+            "tz-600",
+            "tz-500",
+            "tz-400",
+            "tz-350",
+            "tz-300",
+            "tz-200",
+            "tz-100",
+            "tz0",
+            "tz100",
+            "tz200",
+            "tz300",
+            "tz350",
+            "tz400",
+            "tz450",
+            "tz500",
+            "tz550",
+            "tz575",
+            "tz600",
+            "tz650",
+            "tz700",
+            "tz800",
+            "tz875",
+            "tz900",
+            "tz950",
+            "tz100",
+            "tz1050",
+            "tz1100",
+            "tz1200",
+            "tz1275",
+            "tz1300",
+            "tz1400",
+        ],
+        value_fn=lambda coordinator: f"tz{(coordinator.system_data.TIME_ZONE*100):g}",
+        set_value_fn=lambda timezone, entity: async_set_timezone(
+            entity.coordinator, timezone
+        ),
+        translation_key="time_zone",
+    ),
+)
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -342,9 +442,10 @@ async def async_setup_entry(
         _LOGGER.error("Coordinator data is None. Cannot set up button entities")
         return
 
-    neo_devices, system_data = coordinator.data
+    neo_devices, _ = coordinator.data
+    system_data = coordinator.system_data
 
-    _LOGGER.info("Adding Neo Device Buttons")
+    _LOGGER.info("Adding Neo Select entities")
 
     async_add_entities(
         HeatmiserNeoSelectEntity(neodevice, coordinator, hub, description)
@@ -353,6 +454,11 @@ async def async_setup_entry(
         if description.setup_filter_fn(neodevice, system_data)
     )
 
+    async_add_entities(
+        HeatmiserNeoHubSelectEntity(coordinator, hub, description)
+        for description in HUB_SELECT
+        if description.setup_filter_fn(coordinator)
+    )
     platform = entity_platform.async_get_current_platform()
 
     platform.async_register_entity_service(
@@ -396,3 +502,53 @@ class HeatmiserNeoSelectEntity(HeatmiserNeoEntity, SelectEntity):
         """Handle updated data from the coordinator."""
         self._attr_current_option = self.entity_description.value_fn(self.data)
         super()._handle_coordinator_update()
+
+
+class HeatmiserNeoHubSelectEntity(HeatmiserNeoHubEntity, SelectEntity):
+    """Define an Heatmiser Neo Hub select."""
+
+    entity_description: HeatmiserNeoHubSelectEntityDescription
+
+    def __init__(
+        self,
+        coordinator: HeatmiserNeoCoordinator,
+        hub: NeoHub,
+        entity_description: HeatmiserNeoHubSelectEntityDescription,
+    ) -> None:
+        """Initialize Heatmiser Neo select entity."""
+        super().__init__(
+            coordinator,
+            hub,
+            entity_description,
+        )
+        self._attr_current_option = entity_description.value_fn(coordinator)
+
+    async def async_select_option(self, option: str) -> None:
+        """Change the selected option."""
+        await self.entity_description.set_value_fn(option, self)
+        self.coordinator.async_update_listeners()
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator."""
+        self._attr_current_option = self.entity_description.value_fn(self.coordinator)
+        super()._handle_coordinator_update()
+
+
+async def async_set_dst(
+    coordinator: HeatmiserNeoCoordinator, region: str | None = None
+) -> None:
+    """Set DST mode."""
+    message = {"DST_ON" if region else "DST_OFF": region if region else 0}
+    # TODO API implementation is broken. Doesn't work for DST_OFF
+    await coordinator.hub._send(message)  # noqa: SLF001
+
+
+async def async_set_timezone(
+    coordinator: HeatmiserNeoCoordinator, timezone: str
+) -> None:
+    """Set DST mode."""
+    # need to strip the leading 'tz'
+    message = {"TIME_ZONE": round(float(timezone[2:] / 100), 2)}
+    # TODO Should be added to API
+    await coordinator.hub._send(message)  # noqa: SLF001

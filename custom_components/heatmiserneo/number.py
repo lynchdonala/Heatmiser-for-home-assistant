@@ -17,10 +17,10 @@ from homeassistant.components.number import (
 from homeassistant.const import EntityCategory, UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from . import HeatmiserNeoConfigEntry
 from .const import HEATMISER_TEMPERATURE_UNIT_HA_UNIT, HEATMISER_TYPE_IDS_THERMOSTAT
+from .coordinator import HeatmiserNeoCoordinator
 from .entity import HeatmiserNeoEntity, HeatmiserNeoEntityDescription
 
 _LOGGER = logging.getLogger(__name__)
@@ -50,7 +50,8 @@ async def async_setup_entry(
         _LOGGER.error("Coordinator data is None. Cannot set up button entities")
         return
 
-    neo_devices, system_data = coordinator.data
+    neo_devices, _ = coordinator.data
+    system_data = coordinator.system_data
 
     _LOGGER.info("Adding Neo Device Numbers")
 
@@ -152,7 +153,7 @@ class HeatmiserNeoNumber(HeatmiserNeoEntity, NumberEntity):
     def __init__(
         self,
         neostat: NeoStat,
-        coordinator: DataUpdateCoordinator,
+        coordinator: HeatmiserNeoCoordinator,
         hub: NeoHub,
         entity_description: HeatmiserNeoNumberEntityDescription,
     ) -> None:

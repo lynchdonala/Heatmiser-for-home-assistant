@@ -25,7 +25,6 @@ from homeassistant.components.sensor import (
 from homeassistant.const import EntityCategory, UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from . import HeatmiserNeoConfigEntry
 from .const import (
@@ -36,7 +35,13 @@ from .const import (
     HEATMISER_TYPE_IDS_THERMOSTAT,
     HEATMISER_TYPE_IDS_THERMOSTAT_NOT_HC,
 )
-from .entity import HeatmiserNeoEntity, HeatmiserNeoEntityDescription
+from .coordinator import HeatmiserNeoCoordinator
+from .entity import (
+    HeatmiserNeoEntity,
+    HeatmiserNeoEntityDescription,
+    HeatmiserNeoHubEntity,
+    HeatmiserNeoHubEntityDescription,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -54,7 +59,8 @@ async def async_setup_entry(
         _LOGGER.error("Coordinator data is None. Cannot set up sensor entities")
         return
 
-    neo_devices, system_data = coordinator.data
+    neo_devices, _ = coordinator.data
+    system_data = coordinator.system_data
 
     _LOGGER.info("Adding Neo Sensors")
 
@@ -63,6 +69,12 @@ async def async_setup_entry(
         for description in SENSORS
         for neodevice in neo_devices.values()
         if description.setup_filter_fn(neodevice, system_data)
+    )
+
+    async_add_entities(
+        HeatmiserNeoHubSensor(coordinator, hub, description)
+        for description in HUB_SENSORS
+        if description.setup_filter_fn(coordinator)
     )
 
 
@@ -74,6 +86,15 @@ class HeatmiserNeoSensorEntityDescription(
 
     value_fn: Callable[[NeoStat], Any]
     unit_of_measurement_fn: Callable[[NeoStat, Any], Any] | None = None
+
+
+@dataclass(frozen=True, kw_only=True)
+class HeatmiserNeoHubSensorEntityDescription(
+    HeatmiserNeoHubEntityDescription, SensorEntityDescription
+):
+    """Describes a button entity."""
+
+    value_fn: Callable[[HeatmiserNeoCoordinator], Any]
 
 
 SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
@@ -192,6 +213,16 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
     ),
 )
 
+HUB_SENSORS: tuple[HeatmiserNeoHubSensorEntityDescription, ...] = (
+    HeatmiserNeoHubSensorEntityDescription(
+        key="heatmiser_neohub_zigbee_channel",
+        entity_registry_enabled_default=False,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        name="ZigBee Channel",
+        value_fn=lambda coordinator: coordinator.system_data.ZIGBEE_CHANNEL,
+    ),
+)
+
 
 class HeatmiserNeoSensor(HeatmiserNeoEntity, SensorEntity):
     """Heatmiser Neo button entity."""
@@ -199,7 +230,7 @@ class HeatmiserNeoSensor(HeatmiserNeoEntity, SensorEntity):
     def __init__(
         self,
         neostat: NeoStat,
-        coordinator: DataUpdateCoordinator,
+        coordinator: HeatmiserNeoCoordinator,
         hub: NeoHub,
         entity_description: HeatmiserNeoSensorEntityDescription,
     ) -> None:
@@ -225,3 +256,25 @@ class HeatmiserNeoSensor(HeatmiserNeoEntity, SensorEntity):
             )
 
         return self.entity_description.native_unit_of_measurement
+
+
+class HeatmiserNeoHubSensor(HeatmiserNeoHubEntity, SensorEntity):
+    """Heatmiser Neo button entity."""
+
+    def __init__(
+        self,
+        coordinator: HeatmiserNeoCoordinator,
+        hub: NeoHub,
+        entity_description: HeatmiserNeoSensorEntityDescription,
+    ) -> None:
+        """Initialize Heatmiser Neo button entity."""
+        super().__init__(
+            coordinator,
+            hub,
+            entity_description,
+        )
+
+    @property
+    def native_value(self):
+        """Return the sensors temperature value."""
+        return self.entity_description.value_fn(self.coordinator)
