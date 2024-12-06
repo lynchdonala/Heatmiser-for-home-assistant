@@ -1,5 +1,10 @@
 # Change Log
 
+## 20241206
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/221 by @ocrease, adds Time / NTP fixes and hub features.
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/222 by @ocrease, adds flag for modified temperatures.
+
 ## 20241129
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/220 by @ocrease, fixes for thermostat operation when in standby.
