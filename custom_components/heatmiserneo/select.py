@@ -277,9 +277,7 @@ async def async_set_switching_differential(
     val: str, entity: HeatmiserNeoEntity
 ) -> None:
     """Set the switching differential on a device."""
-    message = {"SET_DIFF": [int(val), [entity.data.name]]}
-    # TODO this should be in the API
-    await entity.coordinator.hub._send(message)  # noqa: SLF001
+    await entity.data.set_diff(int(val))
     setattr(entity.data._data_, "SWITCHING DIFFERENTIAL", int(val))
 
 
@@ -288,9 +286,7 @@ async def async_set_preheat(
     entity: HeatmiserNeoEntity,
 ) -> None:
     """Set the maximum preheat time on a device."""
-    message = {"SET_PREHEAT": [int(val), [entity.data.name]]}
-    # TODO this should be in the API
-    await entity.coordinator.hub._send(message)  # noqa: SLF001
+    await entity.data.set_preheat(int(val))
     setattr(entity.data._data_, "MAX_PREHEAT", int(val))
 
 
@@ -317,8 +313,6 @@ async def async_base_set_profile(
     entity: HeatmiserNeoEntity,
 ) -> None:
     """Set the maximum preheat time on a device."""
-    # message = {"RUN_PROFILE_ID": [profile_id, [entity.data.name]]}
-    # TODO this should be in the API
     if profile_id == 0:
         await entity.data.clear_profile_id()
     else:
@@ -610,19 +604,15 @@ async def async_set_dst(
     coordinator: HeatmiserNeoCoordinator, region: str | None = None
 ) -> None:
     """Set DST mode."""
-    message = {"DST_ON" if region else "DST_OFF": region if region else 0}
-    # TODO API implementation is broken. Doesn't work for DST_OFF
-    await coordinator.hub._send(message)  # noqa: SLF001
+    state = region is not None
+    await coordinator.hub.set_dst(state, region)
 
 
 async def async_set_timezone(
     coordinator: HeatmiserNeoCoordinator, timezone: str
 ) -> None:
-    """Set DST mode."""
-    # need to strip the leading 'tz'
-    message = {"TIME_ZONE": round(float(timezone[2:] / 100), 2)}
-    # TODO Should be added to API
-    await coordinator.hub._send(message)  # noqa: SLF001
+    """Set TimeZone."""
+    await coordinator.hub.set_timezone(round(float(timezone[2:]) / 100, 2))
 
 
 def _profile_id_to_name(profile_id, coordinator: HeatmiserNeoCoordinator) -> str | None:
