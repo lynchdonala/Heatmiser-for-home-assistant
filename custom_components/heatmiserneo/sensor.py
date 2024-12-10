@@ -42,6 +42,7 @@ from .entity import (
     HeatmiserNeoHubEntity,
     HeatmiserNeoHubEntityDescription,
 )
+from .helpers import profile_level
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -84,7 +85,7 @@ class HeatmiserNeoSensorEntityDescription(
 ):
     """Describes a button entity."""
 
-    value_fn: Callable[[NeoStat], Any]
+    value_fn: Callable[[HeatmiserNeoEntity], Any]
     unit_of_measurement_fn: Callable[[NeoStat, Any], Any] | None = None
 
 
@@ -104,7 +105,9 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.DURATION,
         native_unit_of_measurement=UnitOfTime.MINUTES,
         value_fn=lambda device: (
-            int(device.hold_time.total_seconds() / 60) if device.hold_on else 0
+            int(device.data.hold_time.total_seconds() / 60)
+            if device.data.hold_on
+            else 0
         ),
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_HOLD
@@ -115,7 +118,7 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
         name=None,  # This is the main entity of the device
-        value_fn=lambda device: device.temperature,
+        value_fn=lambda device: device.data.temperature,
         setup_filter_fn=lambda device, _: device.device_type == 14,
         unit_of_measurement_fn=lambda _, sys_data: (
             HEATMISER_TEMPERATURE_UNIT_HA_UNIT.get(sys_data.CORF, None)
@@ -127,7 +130,7 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
         name="Current Temperature",
-        value_fn=lambda device: device.temperature,
+        value_fn=lambda device: device.data.temperature,
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT
             and not device.time_clock_mode
@@ -143,7 +146,7 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
         entity_registry_enabled_default=False,
         entity_category=EntityCategory.DIAGNOSTIC,
         name="Device Temperature",
-        value_fn=lambda device: device.temperature,
+        value_fn=lambda device: device.data.temperature,
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT
             and device.time_clock_mode
@@ -158,7 +161,7 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
         name="Floor Temperature",
-        value_fn=lambda device: device.current_floor_temperature,
+        value_fn=lambda device: device.data.current_floor_temperature,
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT
             and not device.time_clock_mode
@@ -172,7 +175,7 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
         key="heatmiser_neo_stat_hold_temp",
         device_class=SensorDeviceClass.TEMPERATURE,
         name="Hold Temperature",
-        value_fn=lambda device: device.hold_temp,
+        value_fn=lambda device: device.data.hold_temp,
         setup_filter_fn=lambda device, sys_data: (
             (
                 device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT_NOT_HC
@@ -191,7 +194,7 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
         key="heatmiser_neo_stat_hold_temp_cool",
         device_class=SensorDeviceClass.TEMPERATURE,
         name="Hold Cooling Temperature",
-        value_fn=lambda device: device.hold_cool,
+        value_fn=lambda device: device.data.hold_cool,
         setup_filter_fn=lambda device, sys_data: (
             device.device_type in HEATMISER_TYPE_IDS_HC
             and not device.time_clock_mode
@@ -206,9 +209,47 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.ENUM,
         options=[FAN_OFF, FAN_HIGH, FAN_MEDIUM, FAN_LOW, FAN_AUTO],
         name="Fan Speed",
-        value_fn=lambda device: HEATMISER_FAN_SPEED_HA_FAN_MODE.get(device.fan_speed),
+        value_fn=lambda device: HEATMISER_FAN_SPEED_HA_FAN_MODE.get(
+            device.data.fan_speed
+        ),
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_HC and not device.time_clock_mode
+        ),
+    ),
+    HeatmiserNeoSensorEntityDescription(
+        key="heatmiser_neo_profile_current_temp",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        name="Profile Current Temperature",
+        value_fn=lambda device: _profile_current_temp(
+            device.data.active_profile, device
+        ),
+        setup_filter_fn=lambda device, _: (
+            device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT_NOT_HC
+            and not device.time_clock_mode
+        ),
+        unit_of_measurement_fn=lambda _, sys_data: (
+            HEATMISER_TEMPERATURE_UNIT_HA_UNIT.get(sys_data.CORF, None)
+        ),
+    ),
+    HeatmiserNeoSensorEntityDescription(
+        key="heatmiser_neo_profile_next_temp",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        name="Profile Next Temperature",
+        value_fn=lambda device: _profile_next_temp(device.data.active_profile, device),
+        setup_filter_fn=lambda device, _: (
+            device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT_NOT_HC
+            and not device.time_clock_mode
+        ),
+        unit_of_measurement_fn=lambda _, sys_data: (
+            HEATMISER_TEMPERATURE_UNIT_HA_UNIT.get(sys_data.CORF, None)
+        ),
+    ),
+    HeatmiserNeoSensorEntityDescription(
+        key="heatmiser_neo_profile_next_time",
+        name="Profile Next Time",
+        value_fn=lambda device: _profile_next_time(device.data.active_profile, device),
+        setup_filter_fn=lambda device, _: (
+            device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT_NOT_HC
         ),
     ),
 )
@@ -245,7 +286,7 @@ class HeatmiserNeoSensor(HeatmiserNeoEntity, SensorEntity):
     @property
     def native_value(self):
         """Return the sensors temperature value."""
-        return self.entity_description.value_fn(self.data)
+        return self.entity_description.value_fn(self)
 
     @property
     def native_unit_of_measurement(self) -> str | None:
@@ -278,3 +319,29 @@ class HeatmiserNeoHubSensor(HeatmiserNeoHubEntity, SensorEntity):
     def native_value(self):
         """Return the sensors temperature value."""
         return self.entity_description.value_fn(self.coordinator)
+
+
+def _profile_current_temp(profile_id, entity: HeatmiserNeoSensor) -> float | None:
+    """Convert a profile id to current temperature."""
+    level = profile_level(profile_id, entity.data, entity.coordinator)
+    if level:
+        return float(level[1])
+    return None
+
+
+def _profile_next_temp(profile_id, entity: HeatmiserNeoSensor) -> float | None:
+    _, temp = _profile_next_level(profile_id, entity)
+    return float(temp)
+
+
+def _profile_next_time(profile_id, entity: HeatmiserNeoSensor) -> str | None:
+    t, _ = _profile_next_level(profile_id, entity)
+    return t
+
+
+def _profile_next_level(profile_id, entity: HeatmiserNeoSensor):
+    """Convert a profile id to next level."""
+    lv = profile_level(profile_id, entity.data, entity.coordinator, True)
+    if lv:
+        return lv[0], lv[1]
+    return None, None

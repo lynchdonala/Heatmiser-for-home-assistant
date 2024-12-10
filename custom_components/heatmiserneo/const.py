@@ -31,6 +31,8 @@ ATTR_HOLD_DURATION = "hold_duration"
 ATTR_HOLD_STATE = "hold_state"
 ATTR_HOLD_TEMPERATURE = "hold_temperature"
 
+PROFILE_0 = "PROFILE_0"
+
 HEATMISER_HUB_PRODUCT_LIST = [
     "NULL",
     "NeoHub Version 1",
