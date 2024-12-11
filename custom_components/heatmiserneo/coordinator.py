@@ -8,6 +8,7 @@ import logging
 
 from neohubapi.neohub import (
     ATTR_DEVICES,
+    ATTR_LIVE,
     ATTR_PROFILES,
     ATTR_PROFILES_0,
     ATTR_SYSTEM,
@@ -65,6 +66,12 @@ class HeatmiserNeoCoordinator(DataUpdateCoordinator[NeoHub]):
         for device in devices.values():
             if filter(device):
                 action(device)
+
+    @property
+    def live_data(self):
+        """Helper to get the data for the current device."""
+        (_, all_data) = self.data
+        return all_data[ATTR_LIVE]
 
     @property
     def system_data(self):

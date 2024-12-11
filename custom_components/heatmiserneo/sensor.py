@@ -4,6 +4,7 @@
 
 from collections.abc import Callable
 from dataclasses import dataclass
+import datetime
 import logging
 from typing import Any
 
@@ -247,6 +248,7 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
     HeatmiserNeoSensorEntityDescription(
         key="heatmiser_neo_profile_next_time",
         name="Profile Next Time",
+        device_class=SensorDeviceClass.TIMESTAMP,
         value_fn=lambda device: _profile_next_time(device.data.active_profile, device),
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT_NOT_HC
@@ -261,6 +263,12 @@ HUB_SENSORS: tuple[HeatmiserNeoHubSensorEntityDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         name="ZigBee Channel",
         value_fn=lambda coordinator: coordinator.system_data.ZIGBEE_CHANNEL,
+    ),
+    HeatmiserNeoHubSensorEntityDescription(
+        key="heatmiser_neohub_holiday_end",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        name="Holiday End",
+        value_fn=lambda coordinator: _holiday_end(coordinator),
     ),
 )
 
@@ -336,7 +344,19 @@ def _profile_next_temp(profile_id, entity: HeatmiserNeoSensor) -> float | None:
 
 def _profile_next_time(profile_id, entity: HeatmiserNeoSensor) -> str | None:
     t, _ = _profile_next_level(profile_id, entity)
-    return t
+    device_time = entity.data._data_.TIME
+    profile_time = datetime.datetime.strptime(t, "%H:%M")
+    tz = entity.coordinator.system_data.TIME_ZONE
+    if entity.coordinator.system_data.DST_ON:
+        tz = tz + 1
+    profile_datetime = datetime.datetime.now().replace(
+        hour=profile_time.hour,
+        minute=profile_time.minute,
+        tzinfo=datetime.timezone(datetime.timedelta(minutes=tz * 60)),
+    )
+    if t < device_time:
+        return profile_datetime + datetime.timedelta(days=1)
+    return profile_datetime
 
 
 def _profile_next_level(profile_id, entity: HeatmiserNeoSensor):
@@ -345,3 +365,25 @@ def _profile_next_level(profile_id, entity: HeatmiserNeoSensor):
     if lv:
         return lv[0], lv[1]
     return None, None
+
+
+def _holiday_end(coordinator: HeatmiserNeoCoordinator) -> datetime.datetime | None:
+    """Convert the holiday end to a datetime."""
+    holiday = coordinator.live_data.HUB_HOLIDAY
+    holiday_end = coordinator.live_data.HOLIDAY_END
+
+    if not holiday:
+        return None
+
+    try:
+        parsed_datetime = datetime.datetime.strptime(
+            holiday_end, "%a %b %d %H:%M:%S %Y\n"
+        )
+        return parsed_datetime.replace(
+            tzinfo=datetime.timezone(
+                datetime.timedelta(minutes=coordinator.system_data.TIME_ZONE * 60)
+            )
+        )
+    except ValueError:
+        _LOGGER.exception("Failed to parse hub holiday end - %s", holiday_end)
+        return None

@@ -68,7 +68,7 @@ class HeatmiserNeoButtonEntityDescription(
 ):
     """Describes a button entity."""
 
-    press_fn: Callable[[NeoStat], Awaitable[None]]
+    press_fn: Callable[[HeatmiserNeoEntity], Awaitable[None]]
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -88,7 +88,7 @@ BUTTONS: tuple[HeatmiserNeoButtonEntityDescription, ...] = (
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_IDENTIFY
         ),
-        press_fn=lambda dev: dev.identify(),
+        press_fn=lambda dev: dev.data.identify(),
     ),
 )
 
@@ -123,7 +123,7 @@ class HeatmiserNeoButton(HeatmiserNeoEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         """Handle the button press."""
-        await self.entity_description.press_fn(self.data)
+        await self.entity_description.press_fn(self)
 
 
 class HeatmiserNeoHubButton(HeatmiserNeoHubEntity, ButtonEntity):

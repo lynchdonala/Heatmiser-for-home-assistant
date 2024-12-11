@@ -198,6 +198,16 @@ HUB_BINARY_SENSORS: tuple[HeatmiserNeoHubBinarySensorEntityDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda coordinator: coordinator.system_data.DST_ON,
     ),
+    HeatmiserNeoHubBinarySensorEntityDescription(
+        key="heatmiser_neohub_away",
+        name="Away",
+        value_fn=lambda coordinator: coordinator.live_data.HUB_AWAY,
+    ),
+    HeatmiserNeoHubBinarySensorEntityDescription(
+        key="heatmiser_neohub_holiday",
+        name="Holiday",
+        value_fn=lambda coordinator: coordinator.live_data.HUB_HOLIDAY,
+    ),
 )
 
 
