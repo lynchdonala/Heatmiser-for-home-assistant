@@ -345,6 +345,8 @@ def _profile_next_temp(profile_id, entity: HeatmiserNeoSensor) -> float | None:
 def _profile_next_time(profile_id, entity: HeatmiserNeoSensor) -> str | None:
     t, _ = _profile_next_level(profile_id, entity)
     device_time = entity.data._data_.TIME
+    if len(device_time) == 4:
+        device_time = f"0{device_time}"
     profile_time = datetime.datetime.strptime(t, "%H:%M")
     tz = entity.coordinator.system_data.TIME_ZONE
     if entity.coordinator.system_data.DST_ON:

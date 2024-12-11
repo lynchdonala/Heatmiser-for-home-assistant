@@ -169,6 +169,28 @@ def profile_level(
                 else _profile_previous_day_key(device_weekday, profile_format)
             )
             levels = _profile_levels(profile, alt_key)
+            if flatten_fn:
+                levels = flatten_fn(levels)
             current_level = levels[0 if next else -1]
+            if flatten_fn and not next:
+                previous_level = levels[-2]
+                if (
+                    current_level[0] < previous_level[0]
+                    and current_level[0] > device_time
+                ):
+                    ## Its just after midnight and we haven't reached the last profile time
+                    ## so look at the one before
+                    current_level = previous_level
+        elif flatten_fn and next and current_level[0] == levels[0][0]:
+            ## need to check previous day as well if its the first level
+            alt_key = _profile_previous_day_key(device_weekday, profile_format)
+            levels = _profile_levels(profile, alt_key)
+            if flatten_fn:
+                levels = flatten_fn(levels)
+            previous_level = levels[-1]
+            if previous_level[0] < current_level[0] and previous_level[0] > device_time:
+                ## Its just after midnight and we haven't reached the last profile time
+                ## so that is the next level
+                current_level = previous_level
         return current_level
     return None
