@@ -17,7 +17,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import HeatmiserNeoConfigEntry
-from .const import HEATMISER_TYPE_IDS_IDENTIFY
+from .const import HEATMISER_TYPE_IDS_IDENTIFY, HEATMISER_TYPE_IDS_REPEATER
 from .coordinator import HeatmiserNeoCoordinator
 from .entity import (
     HeatmiserNeoEntity,
@@ -80,6 +80,13 @@ class HeatmiserNeoHubButtonEntityDescription(
     press_fn: Callable[[HeatmiserNeoCoordinator], Awaitable[None]]
 
 
+async def async_remove_repeater(entity: HeatmiserNeoEntity):
+    """Handle repeater removal."""
+    message = {"REMOVE_REPEATER": entity.data.device_id}
+
+    return await entity.coordinator.hub._send(message)  # noqa: SLF001
+
+
 BUTTONS: tuple[HeatmiserNeoButtonEntityDescription, ...] = (
     HeatmiserNeoButtonEntityDescription(
         key="heatmiser_neo_identify_button",
@@ -89,6 +96,14 @@ BUTTONS: tuple[HeatmiserNeoButtonEntityDescription, ...] = (
             device.device_type in HEATMISER_TYPE_IDS_IDENTIFY
         ),
         press_fn=lambda dev: dev.data.identify(),
+    ),
+    HeatmiserNeoButtonEntityDescription(
+        key="heatmiser_repeater_remove",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        setup_filter_fn=lambda device, _: (
+            device.device_type in HEATMISER_TYPE_IDS_REPEATER
+        ),
+        press_fn=async_remove_repeater,
     ),
 )
 
