@@ -108,7 +108,7 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
         value_fn=lambda device: (
             int(device.data.hold_time.total_seconds() / 60)
             if device.data.hold_on
-            else 0
+            else None
         ),
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_HOLD
@@ -339,11 +339,15 @@ def _profile_current_temp(profile_id, entity: HeatmiserNeoSensor) -> float | Non
 
 def _profile_next_temp(profile_id, entity: HeatmiserNeoSensor) -> float | None:
     _, temp = _profile_next_level(profile_id, entity)
-    return float(temp)
+    if temp:
+        return float(temp)
+    return None
 
 
 def _profile_next_time(profile_id, entity: HeatmiserNeoSensor) -> str | None:
     t, _ = _profile_next_level(profile_id, entity)
+    if not t:
+        return None
     device_time = entity.data._data_.TIME
     if len(device_time) == 4:
         device_time = f"0{device_time}"
