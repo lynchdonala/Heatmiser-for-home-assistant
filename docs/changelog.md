@@ -1,6 +1,6 @@
 # Change Log
 
-# 20241212
+## 20241212
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/223 by @ocrease, Bumps NeoHub API version and adds support for repeater and profile features.
 
 ## 20241206
