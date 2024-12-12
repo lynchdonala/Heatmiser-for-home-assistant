@@ -17,7 +17,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import HeatmiserNeoConfigEntry
-from .const import HEATMISER_TYPE_IDS_IDENTIFY
+from .const import HEATMISER_TYPE_IDS_IDENTIFY, HEATMISER_TYPE_IDS_REPEATER
 from .coordinator import HeatmiserNeoCoordinator
 from .entity import (
     HeatmiserNeoEntity,
@@ -68,7 +68,7 @@ class HeatmiserNeoButtonEntityDescription(
 ):
     """Describes a button entity."""
 
-    press_fn: Callable[[NeoStat], Awaitable[None]]
+    press_fn: Callable[[HeatmiserNeoEntity], Awaitable[None]]
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -80,6 +80,11 @@ class HeatmiserNeoHubButtonEntityDescription(
     press_fn: Callable[[HeatmiserNeoCoordinator], Awaitable[None]]
 
 
+async def async_remove_repeater(entity: HeatmiserNeoEntity):
+    """Handle repeater removal."""
+    return await entity.coordinator.hub.remove_repeater(entity.data.device_id)
+
+
 BUTTONS: tuple[HeatmiserNeoButtonEntityDescription, ...] = (
     HeatmiserNeoButtonEntityDescription(
         key="heatmiser_neo_identify_button",
@@ -88,7 +93,15 @@ BUTTONS: tuple[HeatmiserNeoButtonEntityDescription, ...] = (
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_IDENTIFY
         ),
-        press_fn=lambda dev: dev.identify(),
+        press_fn=lambda dev: dev.data.identify(),
+    ),
+    HeatmiserNeoButtonEntityDescription(
+        key="heatmiser_repeater_remove",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        setup_filter_fn=lambda device, _: (
+            device.device_type in HEATMISER_TYPE_IDS_REPEATER
+        ),
+        press_fn=async_remove_repeater,
     ),
 )
 
@@ -123,7 +136,7 @@ class HeatmiserNeoButton(HeatmiserNeoEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         """Handle the button press."""
-        await self.entity_description.press_fn(self.data)
+        await self.entity_description.press_fn(self)
 
 
 class HeatmiserNeoHubButton(HeatmiserNeoHubEntity, ButtonEntity):

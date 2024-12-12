@@ -9,7 +9,7 @@ from functools import partial
 import logging
 from typing import Any
 
-from neohubapi.neohub import NeoHub, NeoStat
+from neohubapi.neohub import ATTR_SYSTEM, NeoHub, NeoStat
 
 from homeassistant.core import ServiceCall
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -93,7 +93,8 @@ class HeatmiserNeoEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
     @property
     def system_data(self):
         """Helper to get the data for the current device."""
-        return self.coordinator.system_data
+        (_, all_data) = self.coordinator.data
+        return all_data[ATTR_SYSTEM]
 
     @property
     def available(self):

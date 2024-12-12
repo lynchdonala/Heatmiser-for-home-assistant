@@ -6,7 +6,17 @@ from collections.abc import Callable
 from datetime import timedelta
 import logging
 
-from neohubapi.neohub import NeoHub, NeoStat
+from neohubapi.neohub import (
+    ATTR_DEVICES,
+    ATTR_LIVE,
+    ATTR_PROFILES,
+    ATTR_PROFILES_0,
+    ATTR_SYSTEM,
+    ATTR_TIMER_PROFILES,
+    ATTR_TIMER_PROFILES_0,
+    NeoHub,
+    NeoStat,
+)
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -17,7 +27,7 @@ _LOGGER = logging.getLogger(__name__)
 class HeatmiserNeoCoordinator(DataUpdateCoordinator[NeoHub]):
     """Coordinator Class for Heatmiser Neo Hub."""
 
-    _device_serial_numbers: dict[int, dict[str, str]]
+    # _device_serial_numbers: dict[int, dict[str, str]]
 
     def __init__(self, hass: HomeAssistant, hub: NeoHub) -> None:
         """Initialize the HeatmiserNeo Update Coordinator."""
@@ -30,43 +40,16 @@ class HeatmiserNeoCoordinator(DataUpdateCoordinator[NeoHub]):
             always_update=True,
         )
 
-    async def _async_setup(self):
-        device_serial_numbers = await self.hub.devices_sn()
-        _LOGGER.debug("device serial numbers: %s", device_serial_numbers)
-        # Convert device_serial_numbers (SimpleNamespace) to a dictionary
-        device_serial_numbers_dict = vars(device_serial_numbers)
-        self._device_serial_numbers = {
-            v[0]: {"name": k, "serial_number": v[1]}
-            for (k, v) in device_serial_numbers_dict.items()
-        }
-        _LOGGER.debug("device serial numbers map: %s", self._device_serial_numbers)
-
     async def _async_update_data(self):
         """Fetch data from the Hub all at once and make it available for all devices."""
         _LOGGER.info("Executing update_data()")
         async with asyncio.timeout(30):
-            system_data = await self.hub.get_system()
-            devices_data = await self.hub.get_devices_data()
+            all_live_data = await self.hub.get_all_live_data()
 
-            _LOGGER.debug("system_data: %s", system_data)
-            _LOGGER.debug("devices_data: %s", devices_data)
+            _LOGGER.debug("live_data: %s", all_live_data)
 
-            ## Adding Serial numbers to device data.
-            # Loop through devices and append serial numbers to _simple_attrs
-            for device in devices_data["neo_devices"]:
-                device_id = (
-                    device._data_.DEVICE_ID
-                )  # Get the device ID from the _data_ namespace
-
-                # If any matching serials are found, assign the first one, else set to "UNKNOWN"
-                serial_number = self._get_device_sn(device_id)
-
-                # Add serial number if it doesn't already exist
-                if getattr(device, "serial_number", None) is None:
-                    setattr(device, "serial_number", serial_number)
-
-            devices = {device.name: device for device in devices_data["neo_devices"]}
-            return devices, system_data
+            devices = {device.name: device for device in all_live_data[ATTR_DEVICES]}
+            return devices, all_live_data
 
     def _get_device_sn(self, device_id: int) -> str:
         """Get a device serial number by its device id."""
@@ -85,7 +68,37 @@ class HeatmiserNeoCoordinator(DataUpdateCoordinator[NeoHub]):
                 action(device)
 
     @property
+    def live_data(self):
+        """Helper to get the data for the current device."""
+        (_, all_data) = self.data
+        return all_data[ATTR_LIVE]
+
+    @property
     def system_data(self):
         """Helper to get the data for the current device."""
-        (_, system_data) = self.data
-        return system_data
+        (_, all_data) = self.data
+        return all_data[ATTR_SYSTEM]
+
+    @property
+    def profiles(self):
+        """Helper to get the data for the current device."""
+        (_, all_data) = self.data
+        return all_data.get(ATTR_PROFILES, {})
+
+    @property
+    def profiles_0(self):
+        """Helper to get the data for the current device."""
+        (_, all_data) = self.data
+        return all_data.get(ATTR_PROFILES_0, {})
+
+    @property
+    def timer_profiles(self):
+        """Helper to get the data for the current device."""
+        (_, all_data) = self.data
+        return all_data.get(ATTR_TIMER_PROFILES, {})
+
+    @property
+    def timer_profiles_0(self):
+        """Helper to get the data for the current device."""
+        (_, all_data) = self.data
+        return all_data.get(ATTR_TIMER_PROFILES_0, {})
