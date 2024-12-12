@@ -23,6 +23,7 @@ from .const import (
     HEATMISER_TYPE_IDS_HOLD,
     HEATMISER_TYPE_IDS_STANDBY,
     HEATMISER_TYPE_IDS_THERMOSTAT,
+    HEATMISER_TYPE_IDS_THERMOSTAT_NOT_HC,
     HEATMISER_TYPE_IDS_TIMER,
 )
 from .coordinator import HeatmiserNeoCoordinator
@@ -32,6 +33,7 @@ from .entity import (
     HeatmiserNeoHubEntity,
     HeatmiserNeoHubEntityDescription,
 )
+from .helpers import profile_level
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -74,7 +76,7 @@ class HeatmiserNeoBinarySensorEntityDescription(
 ):
     """Describes a button entity."""
 
-    value_fn: Callable[[NeoStat], bool]
+    value_fn: Callable[[HeatmiserNeoEntity], bool]
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -92,20 +94,20 @@ BINARY_SENSORS: tuple[HeatmiserNeoBinarySensorEntityDescription, ...] = (
         device_class=BinarySensorDeviceClass.CONNECTIVITY,
         entity_category=EntityCategory.DIAGNOSTIC,
         availability_fn=lambda _: True,
-        value_fn=lambda device: not device.offline,
+        value_fn=lambda device: not device.data.offline,
     ),
     HeatmiserNeoBinarySensorEntityDescription(
         key="heatmiser_neo_contact_sensor",
         device_class=BinarySensorDeviceClass.OPENING,
         name=None,  # This is the main entity of the device
-        value_fn=lambda device: bool(device.window_open),
+        value_fn=lambda device: bool(device.data.window_open),
         setup_filter_fn=lambda device, _: device.device_type == 5,
     ),
     HeatmiserNeoBinarySensorEntityDescription(
         key="heatmiser_neo_device_hold_active",
         entity_category=EntityCategory.DIAGNOSTIC,
         name="Hold Active",
-        value_fn=lambda device: device.hold_on,
+        value_fn=lambda device: device.data.hold_on,
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_HOLD,
         ),
@@ -114,13 +116,13 @@ BINARY_SENSORS: tuple[HeatmiserNeoBinarySensorEntityDescription, ...] = (
         key="heatmiser_neo_battery_level_sensor",
         device_class=BinarySensorDeviceClass.BATTERY,
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda device: device.low_battery,
+        value_fn=lambda device: device.data.low_battery,
         setup_filter_fn=lambda device, _: device.battery_powered,
     ),
     HeatmiserNeoBinarySensorEntityDescription(
         key="heatmiser_neo_device_timer_output_active",
         name="Output",
-        value_fn=lambda device: device.timer_on,
+        value_fn=lambda device: device.data.timer_on,
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_TIMER and device.time_clock_mode
         ),
@@ -130,7 +132,7 @@ BINARY_SENSORS: tuple[HeatmiserNeoBinarySensorEntityDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         entity_registry_enabled_default=False,
         name="Away",
-        value_fn=lambda device: device.away,
+        value_fn=lambda device: device.data.away,
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_AWAY
         ),
@@ -139,7 +141,7 @@ BINARY_SENSORS: tuple[HeatmiserNeoBinarySensorEntityDescription, ...] = (
         key="heatmiser_neo_device_standby",
         entity_category=EntityCategory.DIAGNOSTIC,
         name="Standby",
-        value_fn=lambda device: device.standby,
+        value_fn=lambda device: device.data.standby,
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_STANDBY
         ),
@@ -149,7 +151,7 @@ BINARY_SENSORS: tuple[HeatmiserNeoBinarySensorEntityDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         entity_registry_enabled_default=False,
         name="Holiday",
-        value_fn=lambda device: device.holiday,
+        value_fn=lambda device: device.data.holiday,
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_AWAY
         ),
@@ -158,7 +160,7 @@ BINARY_SENSORS: tuple[HeatmiserNeoBinarySensorEntityDescription, ...] = (
         key="heatmiser_neo_floor_limit",
         entity_category=EntityCategory.DIAGNOSTIC,
         name="Floor Limit Reached",
-        value_fn=lambda device: device.floor_limit,
+        value_fn=lambda device: device.data.floor_limit,
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT
             and not device.time_clock_mode
@@ -170,9 +172,20 @@ BINARY_SENSORS: tuple[HeatmiserNeoBinarySensorEntityDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         entity_registry_enabled_default=False,
         name="Temporary Set",
-        value_fn=lambda device: device.temporary_set_flag,
+        value_fn=lambda device: device.data.temporary_set_flag,
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT
+        ),
+    ),
+    HeatmiserNeoBinarySensorEntityDescription(
+        key="heatmiser_neo_profile_current_state",
+        name="Profile State",
+        value_fn=lambda device: _profile_current_state(
+            device.data.active_profile, device
+        ),
+        setup_filter_fn=lambda device, _: (
+            device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT_NOT_HC
+            and device.time_clock_mode
         ),
     ),
 )
@@ -184,6 +197,16 @@ HUB_BINARY_SENSORS: tuple[HeatmiserNeoHubBinarySensorEntityDescription, ...] = (
         entity_registry_enabled_default=False,
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda coordinator: coordinator.system_data.DST_ON,
+    ),
+    HeatmiserNeoHubBinarySensorEntityDescription(
+        key="heatmiser_neohub_away",
+        name="Away",
+        value_fn=lambda coordinator: coordinator.live_data.HUB_AWAY,
+    ),
+    HeatmiserNeoHubBinarySensorEntityDescription(
+        key="heatmiser_neohub_holiday",
+        name="Holiday",
+        value_fn=lambda coordinator: coordinator.live_data.HUB_HOLIDAY,
     ),
 )
 
@@ -209,7 +232,7 @@ class HeatmiserNeoBinarySensor(HeatmiserNeoEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool | None:
         """Return true if the binary sensor is on."""
-        return self.entity_description.value_fn(self.data)
+        return self.entity_description.value_fn(self)
 
 
 class HeatmiserNeoHubBinarySensor(HeatmiserNeoHubEntity, BinarySensorEntity):
@@ -232,3 +255,11 @@ class HeatmiserNeoHubBinarySensor(HeatmiserNeoHubEntity, BinarySensorEntity):
     def is_on(self) -> bool | None:
         """Return true if the binary sensor is on."""
         return self.entity_description.value_fn(self.coordinator)
+
+
+def _profile_current_state(profile_id, entity: HeatmiserNeoEntity) -> bool | None:
+    """Convert a profile id to current temperature."""
+    level = profile_level(profile_id, entity.data, entity.coordinator)
+    if level:
+        return level[1]
+    return None

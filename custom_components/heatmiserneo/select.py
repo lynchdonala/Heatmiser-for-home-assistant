@@ -29,7 +29,9 @@ from .const import (
     DEFAULT_TIMER_HOLD_DURATION,
     HEATMISER_TYPE_IDS_PLUG,
     HEATMISER_TYPE_IDS_THERMOSTAT,
+    HEATMISER_TYPE_IDS_THERMOSTAT_NOT_HC,
     HEATMISER_TYPE_IDS_TIMER,
+    PROFILE_0,
     SERVICE_TIMER_HOLD_ON,
     ModeSelectOption,
 )
@@ -51,9 +53,9 @@ class HeatmiserNeoSelectEntityDescription(
 ):
     """Class to describe an Heatmiser Neo select entity."""
 
-    options: list[str]
-    value_fn: Callable[[NeoStat], str]
+    value_fn: Callable[[HeatmiserNeoSelectEntity], str]
     set_value_fn: Callable[[str, HeatmiserNeoSelectEntity], Awaitable[None]]
+    options_fn: Callable[[HeatmiserNeoSelectEntity], list[str]] | None = None
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -62,7 +64,6 @@ class HeatmiserNeoHubSelectEntityDescription(
 ):
     """Class to describe an Heatmiser Neo select entity."""
 
-    options: list[str]
     value_fn: Callable[[HeatmiserNeoCoordinator], str]
     set_value_fn: Callable[[str, HeatmiserNeoHubSelectEntity], Awaitable[None]]
 
@@ -276,9 +277,7 @@ async def async_set_switching_differential(
     val: str, entity: HeatmiserNeoEntity
 ) -> None:
     """Set the switching differential on a device."""
-    message = {"SET_DIFF": [int(val), [entity.data.name]]}
-    # TODO this should be in the API
-    await entity.coordinator.hub._send(message)  # noqa: SLF001
+    await entity.data.set_diff(int(val))
     setattr(entity.data._data_, "SWITCHING DIFFERENTIAL", int(val))
 
 
@@ -287,10 +286,38 @@ async def async_set_preheat(
     entity: HeatmiserNeoEntity,
 ) -> None:
     """Set the maximum preheat time on a device."""
-    message = {"SET_PREHEAT": [int(val), [entity.data.name]]}
-    # TODO this should be in the API
-    await entity.coordinator.hub._send(message)  # noqa: SLF001
+    await entity.data.set_preheat(int(val))
     setattr(entity.data._data_, "MAX_PREHEAT", int(val))
+
+
+async def async_set_profile(
+    val: str,
+    entity: HeatmiserNeoEntity,
+) -> None:
+    """Set the maximum preheat time on a device."""
+    profile_id = _profile_name_to_id(entity.coordinator, val)
+    await async_base_set_profile(profile_id, entity)
+
+
+async def async_set_timer_profile(
+    val: str,
+    entity: HeatmiserNeoEntity,
+) -> None:
+    """Set the maximum preheat time on a device."""
+    profile_id = _timer_profile_name_to_id(entity.coordinator, val)
+    await async_base_set_profile(profile_id, entity)
+
+
+async def async_base_set_profile(
+    profile_id: int,
+    entity: HeatmiserNeoEntity,
+) -> None:
+    """Set the maximum preheat time on a device."""
+    if profile_id == 0:
+        await entity.data.clear_profile_id()
+    else:
+        await entity.data.set_profile_id(profile_id)
+    entity.data.active_profile = profile_id
 
 
 TIMER_SET_MODE = {
@@ -320,7 +347,7 @@ SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
             in HEATMISER_TYPE_IDS_TIMER.difference(HEATMISER_TYPE_IDS_PLUG)
             and device.time_clock_mode
         ),
-        value_fn=lambda dev: _timer_mode(dev).value,
+        value_fn=lambda entity: _timer_mode(entity.data).value,
         set_value_fn=lambda mode, entity: TIMER_SET_MODE.get(ModeSelectOption(mode))(
             entity
         ),
@@ -333,7 +360,7 @@ SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
         name=None,  # This is the main entity of the device
         options=[c.value.lower() for c in PLUG_SET_MODE],
         setup_filter_fn=lambda device, _: device.device_type in HEATMISER_TYPE_IDS_PLUG,
-        value_fn=lambda dev: _plug_mode(dev).value,
+        value_fn=lambda entity: _plug_mode(entity.data).value,
         set_value_fn=lambda mode, entity: PLUG_SET_MODE.get(ModeSelectOption(mode))(
             entity
         ),
@@ -350,7 +377,9 @@ SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
             device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT
             and not device.time_clock_mode
         ),
-        value_fn=lambda dev: str(getattr(dev._data_, "SWITCHING DIFFERENTIAL")),
+        value_fn=lambda entity: str(
+            getattr(entity.data._data_, "SWITCHING DIFFERENTIAL")
+        ),
         set_value_fn=async_set_switching_differential,
         translation_key="switching_differential",
     ),
@@ -363,9 +392,41 @@ SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
             device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT
             and not device.time_clock_mode
         ),
-        value_fn=lambda dev: str(dev._data_.MAX_PREHEAT),
+        value_fn=lambda entity: str(entity.data._data_.MAX_PREHEAT),
         set_value_fn=async_set_preheat,
         translation_key="preheat_time",
+    ),
+    HeatmiserNeoSelectEntityDescription(
+        key="heatmiser_neo_active_profile",
+        options_fn=lambda entity: _profile_names(entity.coordinator),
+        # entity_category=EntityCategory.CONFIG,
+        # entity_registry_enabled_default=False,
+        setup_filter_fn=lambda device, _: (
+            device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT_NOT_HC
+            and not device.time_clock_mode
+        ),
+        value_fn=lambda entity: _profile_id_to_name(
+            entity.data.active_profile, entity.coordinator
+        ),
+        set_value_fn=async_set_profile,
+        name="Active Profile",
+        # translation_key="preheat_time",
+    ),
+    HeatmiserNeoSelectEntityDescription(
+        key="heatmiser_neo_active_timer_profile",
+        options_fn=lambda entity: _timer_profile_names(entity.coordinator),
+        # entity_category=EntityCategory.CONFIG,
+        # entity_registry_enabled_default=False,
+        setup_filter_fn=lambda device, _: (
+            device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT_NOT_HC
+            and device.time_clock_mode
+        ),
+        value_fn=lambda entity: _profile_id_to_name(
+            entity.data.active_profile, entity.coordinator
+        ),
+        set_value_fn=async_set_timer_profile,
+        name="Active Profile",
+        # translation_key="preheat_time",
     ),
 )
 
@@ -490,7 +551,9 @@ class HeatmiserNeoSelectEntity(HeatmiserNeoEntity, SelectEntity):
             hub,
             entity_description,
         )
-        self._attr_current_option = entity_description.value_fn(neostat)
+        if entity_description.options_fn:
+            self._attr_options = entity_description.options_fn(self)
+        self._attr_current_option = entity_description.value_fn(self)
 
     async def async_select_option(self, option: str) -> None:
         """Change the selected option."""
@@ -500,7 +563,9 @@ class HeatmiserNeoSelectEntity(HeatmiserNeoEntity, SelectEntity):
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
-        self._attr_current_option = self.entity_description.value_fn(self.data)
+        if self.entity_description.options_fn:
+            self._attr_options = self.entity_description.options_fn(self)
+        self._attr_current_option = self.entity_description.value_fn(self)
         super()._handle_coordinator_update()
 
 
@@ -539,16 +604,66 @@ async def async_set_dst(
     coordinator: HeatmiserNeoCoordinator, region: str | None = None
 ) -> None:
     """Set DST mode."""
-    message = {"DST_ON" if region else "DST_OFF": region if region else 0}
-    # TODO API implementation is broken. Doesn't work for DST_OFF
-    await coordinator.hub._send(message)  # noqa: SLF001
+    state = region is not None
+    await coordinator.hub.set_dst(state, region)
 
 
 async def async_set_timezone(
     coordinator: HeatmiserNeoCoordinator, timezone: str
 ) -> None:
-    """Set DST mode."""
-    # need to strip the leading 'tz'
-    message = {"TIME_ZONE": round(float(timezone[2:] / 100), 2)}
-    # TODO Should be added to API
-    await coordinator.hub._send(message)  # noqa: SLF001
+    """Set TimeZone."""
+    await coordinator.hub.set_timezone(round(float(timezone[2:]) / 100, 2))
+
+
+def _profile_id_to_name(profile_id, coordinator: HeatmiserNeoCoordinator) -> str | None:
+    """Convert a profile id to a name."""
+    profile = coordinator.profiles.get(int(profile_id))
+    if profile:
+        return profile.name
+    profile = coordinator.timer_profiles.get(int(profile_id))
+    if profile:
+        return profile.name
+    return None
+
+
+def _profile_id_to_name(profile_id, coordinator: HeatmiserNeoCoordinator) -> str | None:
+    """Convert a profile id to a name."""
+    if profile_id == 0:
+        return PROFILE_0
+    profile = coordinator.profiles.get(int(profile_id))
+    if profile:
+        return profile.name
+    profile = coordinator.timer_profiles.get(int(profile_id))
+    if profile:
+        return profile.name
+    return None
+
+
+def _profile_names(coordinator: HeatmiserNeoCoordinator) -> list[str] | None:
+    """Convert a profile id to a name."""
+    names = [p.name for p in coordinator.profiles.values()]
+    names.insert(0, PROFILE_0)
+    return names
+
+
+def _timer_profile_names(coordinator: HeatmiserNeoCoordinator) -> list[str] | None:
+    """Convert a profile id to a name."""
+    names = [p.name for p in coordinator.timer_profiles.values()]
+    names.insert(0, PROFILE_0)
+    return names
+
+
+def _profile_name_to_id(coordinator: HeatmiserNeoCoordinator, option: str) -> int:
+    """Convert a profile id to a name."""
+    if option == PROFILE_0:
+        return 0
+    profiles = [k for k, v in coordinator.profiles.items() if v.name == option]
+    return profiles[0]
+
+
+def _timer_profile_name_to_id(coordinator: HeatmiserNeoCoordinator, option: str) -> int:
+    """Convert a profile id to a name."""
+    if option == PROFILE_0:
+        return 0
+    profiles = [k for k, v in coordinator.timer_profiles.items() if v.name == option]
+    return profiles[0]
