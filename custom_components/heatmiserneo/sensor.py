@@ -358,6 +358,8 @@ def _profile_next_time(profile_id, entity: HeatmiserNeoSensor) -> str | None:
     profile_datetime = datetime.datetime.now().replace(
         hour=profile_time.hour,
         minute=profile_time.minute,
+        second=0,
+        microsecond=0,
         tzinfo=datetime.timezone(datetime.timedelta(minutes=tz * 60)),
     )
     if t < device_time:
