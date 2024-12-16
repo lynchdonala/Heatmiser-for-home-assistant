@@ -11,7 +11,9 @@ from typing import Any
 
 from neohubapi.neohub import ATTR_SYSTEM, NeoHub, NeoStat
 
+from homeassistant.const import ATTR_ENTITY_ID
 from homeassistant.core import ServiceCall
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import EntityDescription
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -150,13 +152,6 @@ class HeatmiserNeoEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
 
     async def call_custom_action(self, service_call: ServiceCall) -> None:
         """Call a custom action specified in the entity description."""
-        if service_call.service not in self.entity_description.custom_functions:
-            _LOGGER.debug(
-                "%s not defined in custom functions for entity %s",
-                service_call.service,
-                self.entity_id,
-            )
-            return
         await self.entity_description.custom_functions.get(service_call.service)(
             self, service_call
         )
@@ -256,6 +251,16 @@ async def call_custom_action(
     entity: HeatmiserNeoEntity, service_call: ServiceCall
 ) -> None:
     """Call a custom action specified in the entity description."""
+    if (
+        not entity.entity_description.custom_functions
+        or service_call.service not in entity.entity_description.custom_functions
+    ):
+        target_entities = service_call.data.get(ATTR_ENTITY_ID, None)
+        if target_entities and entity.entity_id in target_entities:
+            raise HomeAssistantError(
+                f"Entity {entity.entity_id} does not support service"
+            )
+        return
     await entity.call_custom_action(service_call)
 
 

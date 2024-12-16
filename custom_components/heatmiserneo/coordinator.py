@@ -46,6 +46,11 @@ class HeatmiserNeoCoordinator(DataUpdateCoordinator[NeoHub]):
         async with asyncio.timeout(30):
             all_live_data = await self.hub.get_all_live_data()
 
+            if not all_live_data[ATTR_SYSTEM]:
+                ## System data is very important. If it is not returned by the API
+                ## Try getting it directly
+                all_live_data[ATTR_SYSTEM] = await self.hub.get_system()
+
             _LOGGER.debug("live_data: %s", all_live_data)
 
             devices = {device.name: device for device in all_live_data[ATTR_DEVICES]}
