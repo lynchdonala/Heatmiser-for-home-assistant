@@ -1,5 +1,8 @@
 # Change Log
 
+## 20241217
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/225 by @ocrease, addresses issues with profiles not being available and other bugs in beta8.
+
 ## 20241212
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/224 by @ocrease, Bumps NeoHub API version and fixes issues in beta7.
 
