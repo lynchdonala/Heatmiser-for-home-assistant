@@ -42,6 +42,7 @@ from .entity import (
     HeatmiserNeoEntityDescription,
     HeatmiserNeoHubEntity,
     HeatmiserNeoHubEntityDescription,
+    profile_sensor_enabled_by_default,
 )
 from .helpers import profile_level
 
@@ -231,6 +232,7 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
         unit_of_measurement_fn=lambda _, sys_data: (
             HEATMISER_TEMPERATURE_UNIT_HA_UNIT.get(sys_data.CORF, None)
         ),
+        enabled_by_default_fn=profile_sensor_enabled_by_default,
     ),
     HeatmiserNeoSensorEntityDescription(
         key="heatmiser_neo_profile_next_temp",
@@ -244,6 +246,7 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
         unit_of_measurement_fn=lambda _, sys_data: (
             HEATMISER_TEMPERATURE_UNIT_HA_UNIT.get(sys_data.CORF, None)
         ),
+        enabled_by_default_fn=profile_sensor_enabled_by_default,
     ),
     HeatmiserNeoSensorEntityDescription(
         key="heatmiser_neo_profile_next_time",
@@ -253,6 +256,7 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT_NOT_HC
         ),
+        enabled_by_default_fn=profile_sensor_enabled_by_default,
     ),
 )
 
