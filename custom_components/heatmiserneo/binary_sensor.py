@@ -109,7 +109,7 @@ BINARY_SENSORS: tuple[HeatmiserNeoBinarySensorEntityDescription, ...] = (
         name="Hold Active",
         value_fn=lambda device: device.data.hold_on,
         setup_filter_fn=lambda device, _: (
-            device.device_type in HEATMISER_TYPE_IDS_HOLD,
+            device.device_type in HEATMISER_TYPE_IDS_HOLD
         ),
     ),
     HeatmiserNeoBinarySensorEntityDescription(

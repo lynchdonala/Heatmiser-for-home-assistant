@@ -90,7 +90,7 @@ def _profile_previous_day_key(current_weekday: str, format: ScheduleFormat) -> W
                     return Weekday.SATURDAY
 
 
-def _profile_levels(profile, key: Weekday) -> list:
+def _profile_levels(profile, key: Weekday, filter) -> list:
     info = None
     if hasattr(profile, "info"):
         info = profile.info
@@ -99,8 +99,27 @@ def _profile_levels(profile, key: Weekday) -> list:
         info = profile.profiles[0]
     key_val = key.value
     levels = getattr(info, key_val)
-    levels = [lv for lv in levels.__dict__.values() if lv[0] != "24:00"]
+    levels = [lv for lv in levels.__dict__.values() if filter(lv)]
     return sorted(levels, key=lambda lv: lv[0])
+
+
+def _timer_level_filter(level):
+    if level[0] == "24:00":
+        return False
+    if level[0] == level[1]:
+        return False
+    return True
+
+
+def _heating_level_filter(level):
+    if level[0] == "24:00":
+        return False
+    if level[1] < 5:
+        return False
+    if len(level) > 2:
+        if level[2] < 5 and level[3]:
+            return False
+    return True
 
 
 def _flatten_timer_levels(levels):
@@ -138,12 +157,9 @@ def profile_level(
     if len(device_time) == 4:
         device_time = f"0{device_time}"
     profile = None
-    if profile_id == 0:
-        profile = coordinator.profiles_0.get(data.device_id)
-    else:
-        profile = coordinator.profiles.get(int(profile_id))
     flatten_fn = None
-    if not profile:
+    levels_filter = _heating_level_filter
+    if data.time_clock_mode:
         if profile_format == ScheduleFormat.ZERO:
             profile_format = coordinator.system_data.ALT_TIMER_FORMAT
 
@@ -151,46 +167,53 @@ def profile_level(
             profile = coordinator.timer_profiles_0.get(data.device_id)
         else:
             profile = coordinator.timer_profiles.get(int(profile_id))
+
         flatten_fn = _flatten_timer_levels
-    if profile:
-        current_day_key = _profile_current_day_key(device_weekday, profile_format)
-        levels = _profile_levels(profile, current_day_key)
+        levels_filter = _timer_level_filter
+    elif profile_id == 0:
+        profile = coordinator.profiles_0.get(data.device_id)
+    else:
+        profile = coordinator.profiles.get(int(profile_id))
+
+    if hasattr(profile, "error") or not profile:
+        return None
+
+    current_day_key = _profile_current_day_key(device_weekday, profile_format)
+    levels = _profile_levels(profile, current_day_key, levels_filter)
+    if flatten_fn:
+        levels = flatten_fn(levels)
+    current_level = (
+        _next_level(device_time, levels)
+        if next
+        else _current_level(device_time, levels)
+    )
+    if not current_level:
+        alt_key = (
+            _profile_next_day_key(device_weekday, profile_format)
+            if next
+            else _profile_previous_day_key(device_weekday, profile_format)
+        )
+        levels = _profile_levels(profile, alt_key, levels_filter)
         if flatten_fn:
             levels = flatten_fn(levels)
-        current_level = (
-            _next_level(device_time, levels)
-            if next
-            else _current_level(device_time, levels)
-        )
-        if not current_level:
-            alt_key = (
-                _profile_next_day_key(device_weekday, profile_format)
-                if next
-                else _profile_previous_day_key(device_weekday, profile_format)
-            )
-            levels = _profile_levels(profile, alt_key)
-            if flatten_fn:
-                levels = flatten_fn(levels)
-            current_level = levels[0 if next else -1]
-            if flatten_fn and not next:
-                previous_level = levels[-2]
-                if (
-                    current_level[0] < previous_level[0]
-                    and current_level[0] > device_time
-                ):
-                    ## Its just after midnight and we haven't reached the last profile time
-                    ## so look at the one before
-                    current_level = previous_level
-        elif flatten_fn and next and current_level[0] == levels[0][0]:
-            ## need to check previous day as well if its the first level
-            alt_key = _profile_previous_day_key(device_weekday, profile_format)
-            levels = _profile_levels(profile, alt_key)
-            if flatten_fn:
-                levels = flatten_fn(levels)
-            previous_level = levels[-1]
-            if previous_level[0] < current_level[0] and previous_level[0] > device_time:
+        if len(levels) == 0:
+            return None
+        current_level = levels[0 if next else -1]
+        if data.time_clock_mode and not next:
+            previous_level = levels[-2]
+            if current_level[0] < previous_level[0] and current_level[0] > device_time:
                 ## Its just after midnight and we haven't reached the last profile time
-                ## so that is the next level
+                ## so look at the one before
                 current_level = previous_level
-        return current_level
-    return None
+    elif data.time_clock_mode and next and current_level[0] == levels[0][0]:
+        ## need to check previous day as well if its the first level
+        alt_key = _profile_previous_day_key(device_weekday, profile_format)
+        levels = _profile_levels(profile, alt_key, levels_filter)
+        if flatten_fn:
+            levels = flatten_fn(levels)
+        previous_level = levels[-1]
+        if previous_level[0] < current_level[0] and previous_level[0] > device_time:
+            ## Its just after midnight and we haven't reached the last profile time
+            ## so that is the next level
+            current_level = previous_level
+    return current_level

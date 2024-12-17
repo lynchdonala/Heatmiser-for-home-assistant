@@ -45,7 +45,11 @@ async def async_get_config_entry_diagnostics(
     devices = await hub.get_devices()
     devices_sns = {device.serial_number for device in neo_devices.values()}
     devices_sns = {n: "REDACTED-SN-" + str(i) for i, n in enumerate(devices_sns)}
-    zones = {device._data_.ZONE_NAME for device in neo_devices.values()}
+    zones = {
+        device._data_.ZONE_NAME
+        for device in neo_devices.values()
+        if hasattr(device._data_, "ZONE_NAME")
+    }
     device_list = {z: await retrieve_zone_device_list(z, hub) for z in zones}
     return {
         "config_entry": async_redact_data(entry.as_dict(), TO_REDACT_CONFIG),
