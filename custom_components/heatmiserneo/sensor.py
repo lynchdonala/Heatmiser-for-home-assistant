@@ -177,7 +177,7 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
         key="heatmiser_neo_stat_hold_temp",
         device_class=SensorDeviceClass.TEMPERATURE,
         name="Hold Temperature",
-        value_fn=lambda device: device.data.hold_temp,
+        value_fn=lambda device: device.data.hold_temp if device.data.hold_on else None,
         setup_filter_fn=lambda device, sys_data: (
             (
                 device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT_NOT_HC
@@ -196,7 +196,7 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
         key="heatmiser_neo_stat_hold_temp_cool",
         device_class=SensorDeviceClass.TEMPERATURE,
         name="Hold Cooling Temperature",
-        value_fn=lambda device: device.data.hold_cool,
+        value_fn=lambda device: device.data.hold_cool if device.data.hold_on else None,
         setup_filter_fn=lambda device, sys_data: (
             device.device_type in HEATMISER_TYPE_IDS_HC
             and not device.time_clock_mode
