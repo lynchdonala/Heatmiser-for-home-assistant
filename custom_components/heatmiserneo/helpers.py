@@ -170,10 +170,13 @@ def profile_level(
 
         flatten_fn = _flatten_timer_levels
         levels_filter = _timer_level_filter
-    elif profile_id == 0:
-        profile = coordinator.profiles_0.get(data.device_id)
     else:
-        profile = coordinator.profiles.get(int(profile_id))
+        if profile_format == ScheduleFormat.ZERO:
+            return None
+        if profile_id == 0:
+            profile = coordinator.profiles_0.get(data.device_id)
+        else:
+            profile = coordinator.profiles.get(int(profile_id))
 
     if hasattr(profile, "error") or not profile:
         return None
