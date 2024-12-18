@@ -181,7 +181,7 @@ class HeatmiserNeoEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
                     _device_supports_away,
                 )
             if dev.holiday:
-                await self._hub.cancel_holiday(False)
+                await self._hub.cancel_holiday()
                 self.coordinator.update_in_memory_state(
                     partial(set_holiday, False),
                     _device_supports_away,
