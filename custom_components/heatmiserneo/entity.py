@@ -9,7 +9,8 @@ from functools import partial
 import logging
 from typing import Any
 
-from neohubapi.neohub import ATTR_SYSTEM, NeoHub, NeoStat
+from neohubapi.neohub import ATTR_SYSTEM, NeoHub, NeoStat, ScheduleFormat
+from propcache import cached_property
 
 from homeassistant.const import ATTR_ENTITY_ID
 from homeassistant.core import ServiceCall
@@ -36,6 +37,7 @@ class HeatmiserNeoEntityDescription(EntityDescription):
 
     setup_filter_fn: Callable[[NeoStat, Any], bool] = lambda dev, sys_data: True
     availability_fn: Callable[[NeoStat], bool] = lambda device: not device.offline
+    enabled_by_default_fn: Callable[[HeatmiserNeoEntity], bool] | None = None
     icon_fn: Callable[[NeoStat], str | None] | None = None
     # extra_attrs: list[str] | None = None
     custom_functions: (
@@ -51,6 +53,7 @@ class HeatmiserNeoHubEntityDescription(EntityDescription):
     setup_filter_fn: Callable[[HeatmiserNeoCoordinator], bool] = (
         lambda coordinator: True
     )
+    enabled_by_default_fn: Callable[[HeatmiserNeoHubEntity], bool] | None = None
     icon_fn: Callable[[NeoStat], str | None] | None = None
     # extra_attrs: list[str] | None = None
     custom_functions: (
@@ -150,6 +153,16 @@ class HeatmiserNeoEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
             return self.entity_description.icon_fn(self.data)
         return None
 
+    @cached_property
+    def entity_registry_enabled_default(self) -> bool:
+        """Return if the entity should be enabled when first added.
+
+        This only applies when fist added to the entity registry.
+        """
+        if self.entity_description.enabled_by_default_fn:
+            return self.entity_description.enabled_by_default_fn(self)
+        return super().entity_registry_enabled_default
+
     async def call_custom_action(self, service_call: ServiceCall) -> None:
         """Call a custom action specified in the entity description."""
         await self.entity_description.custom_functions.get(service_call.service)(
@@ -246,6 +259,16 @@ class HeatmiserNeoHubEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
             return self.entity_description.icon_fn(self.data)
         return None
 
+    @cached_property
+    def entity_registry_enabled_default(self) -> bool:
+        """Return if the entity should be enabled when first added.
+
+        This only applies when fist added to the entity registry.
+        """
+        if self.entity_description.enabled_by_default_fn:
+            return self.entity_description.enabled_by_default_fn(self)
+        return super().entity_registry_enabled_default
+
 
 async def call_custom_action(
     entity: HeatmiserNeoEntity, service_call: ServiceCall
@@ -266,3 +289,19 @@ async def call_custom_action(
 
 def _device_supports_away(dev: NeoStat) -> bool:
     return dev.device_type in HEATMISER_TYPE_IDS_AWAY
+
+
+def profile_sensor_enabled_by_default(entity: HeatmiserNeoEntity) -> bool:
+    """Determine if a profile entity should be enabled by default."""
+    if (
+        hasattr(entity.coordinator.system_data, "FORMAT")
+        and entity.coordinator.system_data.FORMAT != ScheduleFormat.ZERO
+    ):
+        return True
+    if (
+        entity.data.time_clock_mode
+        and hasattr(entity.coordinator.system_data, "ALT_TIMER_FORMAT")
+        and entity.coordinator.system_data.ALT_TIMER_FORMAT != ScheduleFormat.ZERO
+    ):
+        return True
+    return False
