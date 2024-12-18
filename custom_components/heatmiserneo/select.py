@@ -42,6 +42,7 @@ from .entity import (
     HeatmiserNeoHubEntity,
     HeatmiserNeoHubEntityDescription,
     call_custom_action,
+    profile_sensor_enabled_by_default,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -411,6 +412,7 @@ SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
         set_value_fn=async_set_profile,
         name="Active Profile",
         # translation_key="preheat_time",
+        enabled_by_default_fn=profile_sensor_enabled_by_default,
     ),
     HeatmiserNeoSelectEntityDescription(
         key="heatmiser_neo_active_timer_profile",
@@ -427,6 +429,7 @@ SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
         set_value_fn=async_set_timer_profile,
         name="Active Profile",
         # translation_key="preheat_time",
+        enabled_by_default_fn=profile_sensor_enabled_by_default,
     ),
 )
 

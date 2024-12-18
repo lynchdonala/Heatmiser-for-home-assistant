@@ -42,6 +42,7 @@ from .entity import (
     HeatmiserNeoEntityDescription,
     HeatmiserNeoHubEntity,
     HeatmiserNeoHubEntityDescription,
+    profile_sensor_enabled_by_default,
 )
 from .helpers import profile_level
 
@@ -176,7 +177,7 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
         key="heatmiser_neo_stat_hold_temp",
         device_class=SensorDeviceClass.TEMPERATURE,
         name="Hold Temperature",
-        value_fn=lambda device: device.data.hold_temp,
+        value_fn=lambda device: device.data.hold_temp if device.data.hold_on else None,
         setup_filter_fn=lambda device, sys_data: (
             (
                 device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT_NOT_HC
@@ -195,7 +196,7 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
         key="heatmiser_neo_stat_hold_temp_cool",
         device_class=SensorDeviceClass.TEMPERATURE,
         name="Hold Cooling Temperature",
-        value_fn=lambda device: device.data.hold_cool,
+        value_fn=lambda device: device.data.hold_cool if device.data.hold_on else None,
         setup_filter_fn=lambda device, sys_data: (
             device.device_type in HEATMISER_TYPE_IDS_HC
             and not device.time_clock_mode
@@ -231,6 +232,7 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
         unit_of_measurement_fn=lambda _, sys_data: (
             HEATMISER_TEMPERATURE_UNIT_HA_UNIT.get(sys_data.CORF, None)
         ),
+        enabled_by_default_fn=profile_sensor_enabled_by_default,
     ),
     HeatmiserNeoSensorEntityDescription(
         key="heatmiser_neo_profile_next_temp",
@@ -244,6 +246,7 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
         unit_of_measurement_fn=lambda _, sys_data: (
             HEATMISER_TEMPERATURE_UNIT_HA_UNIT.get(sys_data.CORF, None)
         ),
+        enabled_by_default_fn=profile_sensor_enabled_by_default,
     ),
     HeatmiserNeoSensorEntityDescription(
         key="heatmiser_neo_profile_next_time",
@@ -253,6 +256,7 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT_NOT_HC
         ),
+        enabled_by_default_fn=profile_sensor_enabled_by_default,
     ),
 )
 

@@ -32,6 +32,7 @@ from .entity import (
     HeatmiserNeoEntityDescription,
     HeatmiserNeoHubEntity,
     HeatmiserNeoHubEntityDescription,
+    profile_sensor_enabled_by_default,
 )
 from .helpers import profile_level
 
@@ -187,6 +188,7 @@ BINARY_SENSORS: tuple[HeatmiserNeoBinarySensorEntityDescription, ...] = (
             device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT_NOT_HC
             and device.time_clock_mode
         ),
+        enabled_by_default_fn=profile_sensor_enabled_by_default,
     ),
 )
 
