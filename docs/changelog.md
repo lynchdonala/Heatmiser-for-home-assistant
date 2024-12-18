@@ -1,5 +1,8 @@
 # Change Log
 
+## 20241218
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/226 by @ocrease, fixes profile issues in beta9
+
 ## 20241217
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/225 by @ocrease, addresses issues with profiles not being available and other bugs in beta8.
 
