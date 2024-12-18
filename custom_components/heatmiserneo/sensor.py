@@ -48,6 +48,8 @@ from .helpers import profile_level
 
 _LOGGER = logging.getLogger(__name__)
 
+HOLIDAY_FORMAT = "%a %b %d %H:%M:%S %Y\n"
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -384,13 +386,11 @@ def _holiday_end(coordinator: HeatmiserNeoCoordinator) -> datetime.datetime | No
     holiday = coordinator.live_data.HUB_HOLIDAY
     holiday_end = coordinator.live_data.HOLIDAY_END
 
-    if not holiday:
+    if not holiday or holiday_end == 0:
         return None
 
     try:
-        parsed_datetime = datetime.datetime.strptime(
-            holiday_end, "%a %b %d %H:%M:%S %Y\n"
-        )
+        parsed_datetime = datetime.datetime.strptime(holiday_end, HOLIDAY_FORMAT)
         return parsed_datetime.replace(
             tzinfo=datetime.timezone(
                 datetime.timedelta(minutes=coordinator.system_data.TIME_ZONE * 60)

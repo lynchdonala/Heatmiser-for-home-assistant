@@ -14,9 +14,9 @@ def set_away(state: bool, dev: NeoStat) -> None:
         dev.target_temperature = dev._data_.FROST_TEMP
 
 
-def cancel_holiday(dev: NeoStat) -> None:
+def set_holiday(state: bool, dev: NeoStat) -> None:
     """Cancel holiday on device."""
-    dev.holiday = False
+    dev.holiday = state
 
 
 def _profile_current_day_key(

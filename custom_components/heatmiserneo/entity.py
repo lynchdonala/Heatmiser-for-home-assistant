@@ -26,7 +26,7 @@ from .const import (
     HEATMISER_TYPE_IDS_AWAY,
 )
 from .coordinator import HeatmiserNeoCoordinator
-from .helpers import cancel_holiday, set_away
+from .helpers import set_away, set_holiday
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -168,6 +168,7 @@ class HeatmiserNeoEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
         await self.entity_description.custom_functions.get(service_call.service)(
             self, service_call
         )
+        self.coordinator.async_update_listeners()
 
     async def async_cancel_away_or_holiday(self) -> None:
         """Cancel away/holiday mode."""
@@ -182,7 +183,7 @@ class HeatmiserNeoEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
             if dev.holiday:
                 await self._hub.cancel_holiday(False)
                 self.coordinator.update_in_memory_state(
-                    cancel_holiday,
+                    partial(set_holiday, False),
                     _device_supports_away,
                 )
 
@@ -268,6 +269,13 @@ class HeatmiserNeoHubEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
         if self.entity_description.enabled_by_default_fn:
             return self.entity_description.enabled_by_default_fn(self)
         return super().entity_registry_enabled_default
+
+    async def call_custom_action(self, service_call: ServiceCall) -> None:
+        """Call a custom action specified in the entity description."""
+        await self.entity_description.custom_functions.get(service_call.service)(
+            self, service_call
+        )
+        self.coordinator.async_update_listeners()
 
 
 async def call_custom_action(
