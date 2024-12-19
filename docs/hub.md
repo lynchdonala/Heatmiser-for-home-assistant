@@ -13,9 +13,8 @@ The NeoHub device contains system wide entities and configuration parameters
 
 ## Helper Sensors/Entities
 
-- Away - whether the hub is set to permanently away
-- Holiday - whether the hub is on holiday/temporarily away
-- Holiday End - the end date of a holiday
+- Away - whether the hub is away
+- Away End - if the hub is away and this date is set, then the hub will automatically turn off away mode at this time
 
 ## Diagnostic Entities
 

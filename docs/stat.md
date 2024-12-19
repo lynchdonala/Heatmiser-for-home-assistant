@@ -47,8 +47,7 @@ There are three preset modes:
 
 - Hold Active - shows if a hold is in place
 - Standby - if the device is in standby
-- Away - if the hub is away (eg indefinitely away)
-- Holiday - if the hub is in holiday mode (eg away with an end date)
+- Away - if the hub is away or on holiday
 - Device Temperature - NeoStats in TimeClock mode still have access to the temperature
 - Identify - A button to flash the screen of a NeoStat in TimeClock mode
 - Floor Limit Reached - shows if the output is off because the floor limit temperature has been reached
