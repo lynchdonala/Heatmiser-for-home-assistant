@@ -2,6 +2,8 @@
 
 ## 20241219
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/227 by @ocrease, adds service for holiday/away mode control.
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/228 by @ocrease, fixes naming of remove button.
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/229 by @ocrease, Add documentation using GitHub pages.
 
 ## 20241218
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/226 by @ocrease, fixes profile issues in beta9
