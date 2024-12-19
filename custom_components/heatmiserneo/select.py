@@ -261,7 +261,6 @@ async def async_timer_hold(entity: HeatmiserNeoSelectEntity, service_call: Servi
     hold_minutes = int(duration.total_seconds() / 60)
     hold_minutes = min(hold_minutes, 60 * 99)
     await set_timer_override(entity, state, hold_minutes)
-    entity.coordinator.async_update_listeners()
 
 
 async def async_plug_hold(entity: HeatmiserNeoSelectEntity, service_call: ServiceCall):
@@ -271,7 +270,6 @@ async def async_plug_hold(entity: HeatmiserNeoSelectEntity, service_call: Servic
     hold_minutes = int(duration.total_seconds() / 60)
     hold_minutes = min(hold_minutes, 60 * 99)
     await set_plug_override(entity, state, hold_minutes)
-    entity.coordinator.async_update_listeners()
 
 
 async def async_set_switching_differential(

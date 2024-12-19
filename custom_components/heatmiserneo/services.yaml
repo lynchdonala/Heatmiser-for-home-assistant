@@ -52,3 +52,25 @@ timer_hold_on:
       default: true
       selector:
         boolean:
+set_away_mode:
+  name: Set Away Mode
+  description: Set Away/Holiday Mode on the Heatmiser NeoHub
+  target:
+    entity:
+      integration: heatmiserneo
+      domain: binary_sensor
+  fields:
+    away:
+      name: Away State
+      description: Whether to set away on or off
+      default: false
+      example: true
+      selector:
+        boolean:
+    end:
+      name: Holiday End
+      description: Optional end date for holiday mode
+      required: false
+      example: "2024-01-01 00:00:00"
+      selector:
+        datetime:
