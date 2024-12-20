@@ -1,5 +1,8 @@
 # Change Log
 
+## 20241220
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/230 by @ocrease, combines away sensors, tweaks repeater button.
+
 ## 20241219
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/227 by @ocrease, adds service for holiday/away mode control.
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/228 by @ocrease, fixes naming of remove button.
