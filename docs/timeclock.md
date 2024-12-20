@@ -46,7 +46,6 @@ NeoPlugs are similar to TimeClocks, but have the ability to be set to ON or OFF 
 
 - Hold Active - shows if a hold is in place
 - Standby - if the device is in standby
-- Away - if the hub is away (eg indefinitely away)
-- Holiday - if the hub is in holiday mode (eg away with an end date)
+- Away - if the hub is away or on holiday
 - Device Temperature - NeoStats in TimeClock mode still have access to the temperature
 - Identify - A button to flash the screen of a NeoStat in TimeClock mode

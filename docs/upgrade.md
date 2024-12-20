@@ -35,6 +35,8 @@ This is a major upgrade with a lot of changes. The recommendation is to delete a
 - [PR #226](https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/226)
 - [PR #227](https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/227)
 - [PR #228](https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/228)
+- [PR #229](https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/229)
+- [PR #230](https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/230)
 
 ## Issues fixed/Features added
 

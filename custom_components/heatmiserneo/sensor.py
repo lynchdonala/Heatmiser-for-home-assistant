@@ -273,7 +273,7 @@ HUB_SENSORS: tuple[HeatmiserNeoHubSensorEntityDescription, ...] = (
     HeatmiserNeoHubSensorEntityDescription(
         key="heatmiser_neohub_holiday_end",
         device_class=SensorDeviceClass.TIMESTAMP,
-        name="Holiday End",
+        name="Away End",
         value_fn=lambda coordinator: _holiday_end(coordinator),
     ),
 )

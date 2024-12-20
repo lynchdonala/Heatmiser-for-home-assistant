@@ -98,6 +98,7 @@ BUTTONS: tuple[HeatmiserNeoButtonEntityDescription, ...] = (
     HeatmiserNeoButtonEntityDescription(
         key="heatmiser_repeater_remove",
         entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
         name="Remove",
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_REPEATER

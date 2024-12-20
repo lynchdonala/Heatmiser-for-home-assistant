@@ -230,7 +230,7 @@ BINARY_SENSORS: tuple[HeatmiserNeoBinarySensorEntityDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         entity_registry_enabled_default=False,
         name="Away",
-        value_fn=lambda device: device.data.away,
+        value_fn=lambda device: device.data.away or device.data.holiday,
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_AWAY
         ),
@@ -242,16 +242,6 @@ BINARY_SENSORS: tuple[HeatmiserNeoBinarySensorEntityDescription, ...] = (
         value_fn=lambda device: device.data.standby,
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_STANDBY
-        ),
-    ),
-    HeatmiserNeoBinarySensorEntityDescription(
-        key="heatmiser_neo_device_holiday",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        entity_registry_enabled_default=False,
-        name="Holiday",
-        value_fn=lambda device: device.data.holiday,
-        setup_filter_fn=lambda device, _: (
-            device.device_type in HEATMISER_TYPE_IDS_AWAY
         ),
     ),
     HeatmiserNeoBinarySensorEntityDescription(
@@ -300,13 +290,10 @@ HUB_BINARY_SENSORS: tuple[HeatmiserNeoHubBinarySensorEntityDescription, ...] = (
     HeatmiserNeoHubBinarySensorEntityDescription(
         key="heatmiser_neohub_away",
         name="Away",
-        value_fn=lambda coordinator: coordinator.live_data.HUB_AWAY,
+        value_fn=lambda coordinator: (
+            coordinator.live_data.HUB_AWAY or coordinator.live_data.HUB_HOLIDAY
+        ),
         custom_functions={SERVICE_HUB_AWAY: async_set_away_mode},
-    ),
-    HeatmiserNeoHubBinarySensorEntityDescription(
-        key="heatmiser_neohub_holiday",
-        name="Holiday",
-        value_fn=lambda coordinator: coordinator.live_data.HUB_HOLIDAY,
     ),
 )
 
