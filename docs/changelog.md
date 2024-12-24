@@ -1,5 +1,8 @@
 # Change Log
 
+## 20241224
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/231 by @ocrease, documentation improvements.
+
 ## 20241220
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/230 by @ocrease, combines away sensors, tweaks repeater button.
 
