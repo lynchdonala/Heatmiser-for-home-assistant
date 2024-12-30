@@ -46,16 +46,16 @@ async def async_setup_entry(
     _LOGGER.info("Adding Neo Device Buttons")
 
     async_add_entities(
+        HeatmiserNeoHubButton(coordinator, hub, description)
+        for description in HUB_BUTTONS
+        if description.setup_filter_fn(coordinator)
+    )
+
+    async_add_entities(
         HeatmiserNeoButton(neodevice, coordinator, hub, description)
         for description in BUTTONS
         for neodevice in neo_devices.values()
         if description.setup_filter_fn(neodevice, system_data)
-    )
-
-    async_add_entities(
-        HeatmiserNeoHubButton(coordinator, hub, description)
-        for description in HUB_BUTTONS
-        if description.setup_filter_fn(coordinator)
     )
 
 

@@ -148,16 +148,16 @@ async def async_setup_entry(
     _LOGGER.info("Adding Neo Binary Sensors")
 
     async_add_entities(
+        HeatmiserNeoHubBinarySensor(coordinator, hub, description)
+        for description in HUB_BINARY_SENSORS
+        if description.setup_filter_fn(coordinator)
+    )
+
+    async_add_entities(
         HeatmiserNeoBinarySensor(neodevice, coordinator, hub, description)
         for description in BINARY_SENSORS
         for neodevice in neo_devices.values()
         if description.setup_filter_fn(neodevice, system_data)
-    )
-
-    async_add_entities(
-        HeatmiserNeoHubBinarySensor(coordinator, hub, description)
-        for description in HUB_BINARY_SENSORS
-        if description.setup_filter_fn(coordinator)
     )
 
     platform = entity_platform.async_get_current_platform()

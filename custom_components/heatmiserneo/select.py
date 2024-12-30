@@ -510,19 +510,19 @@ async def async_setup_entry(
     _LOGGER.info("Adding Neo Select entities")
 
     async_add_entities(
+        HeatmiserNeoHubSelectEntity(coordinator, hub, description)
+        for description in HUB_SELECT
+        if description.setup_filter_fn(coordinator)
+    )
+
+    async_add_entities(
         HeatmiserNeoSelectEntity(neodevice, coordinator, hub, description)
         for description in SELECT
         for neodevice in neo_devices.values()
         if description.setup_filter_fn(neodevice, system_data)
     )
 
-    async_add_entities(
-        HeatmiserNeoHubSelectEntity(coordinator, hub, description)
-        for description in HUB_SELECT
-        if description.setup_filter_fn(coordinator)
-    )
     platform = entity_platform.async_get_current_platform()
-
     platform.async_register_entity_service(
         SERVICE_TIMER_HOLD_ON,
         {
