@@ -1,5 +1,8 @@
 # Change Log
 
+## 20241230
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/235 by @ocrease, beta 13 fixes.
+
 ## 20241227
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/232 by @ocrease, documentation update. 
 
