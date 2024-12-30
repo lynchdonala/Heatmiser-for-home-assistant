@@ -7,6 +7,10 @@
         "data": {
           "host": "Host",
           "port": "Port"
+        },
+        "data_description": {
+          "host": "The hostname or IP address of the NeoHub to connect to.",
+          "port": "The TCP port of the NeoHub to connect to (4242 for the Legacy API)."
         }
       },
       "zeroconf_confirm": {

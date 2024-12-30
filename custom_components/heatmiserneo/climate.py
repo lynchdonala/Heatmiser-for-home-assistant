@@ -293,7 +293,7 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
         # Centigrade
         if (
             float(self.data.temperature) < -50.0 or float(self.data.temperature) > 70.0
-        ) and self._unit_of_measurement == "C":
+        ) and self.temperature_unit == UnitOfTemperature.CELSIUS:
             _LOGGER.error(
                 "Error: Climate entity '%s' has an invalid current_temperature value: %s degrees Centigrade, Hub lost connection?",
                 self.data.name,
@@ -304,7 +304,7 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
         # Fahrenheit
         if (
             float(self.data.temperature) < -58.0 or float(self.data.temperature) > 158.0
-        ) and self._unit_of_measurement == "F":
+        ) and self.temperature_unit == UnitOfTemperature.FAHRENHEIT:
             _LOGGER.error(
                 "Error: Climate entity '%s' has an invalid current_temperature value: %s degrees Fahrenheit, Hub lost connection?",
                 self.data.name,
