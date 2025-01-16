@@ -1,7 +1,7 @@
 # Change Log
 
 ## 20250116
-- Major release, version 3.0.0 now available. Massive thanks to @ocrease this is a huge release, Please see previous notes for all changes.
+- Major release, version 3.0.0 now available. Massive thanks to @ocrease. This is a huge release, Please see previous notes for all changes.
 
 ## 20241230
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/235 by @ocrease, beta 13 fixes.
