@@ -10,6 +10,7 @@ import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.components.climate import HVACMode
+from homeassistant.components.zeroconf import ZeroconfServiceInfo
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import callback
 import homeassistant.helpers.config_validation as cv
@@ -17,7 +18,6 @@ from homeassistant.helpers.entity_registry import (
     async_entries_for_config_entry,
     async_get,
 )
-from homeassistant.helpers.typing import DiscoveryInfoType
 
 from .const import CONF_HVAC_MODES, DEFAULT_HOST, DEFAULT_PORT, DOMAIN, AvailableMode
 
@@ -45,10 +45,10 @@ class FlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         self._port = DEFAULT_PORT
         self._errors = None
 
-    async def async_step_zeroconf(self, discovery_info: DiscoveryInfoType):
+    async def async_step_zeroconf(self, discovery_info: ZeroconfServiceInfo):
         """Handle zeroconf discovery."""
         _LOGGER.debug("Zeroconfig discovered %s", discovery_info)
-        self._host = discovery_info["hostname"]
+        self._host = discovery_info.host
 
         await self.async_set_unique_id(f"{self._host}:{self._port}")
         self._abort_if_unique_id_configured()
