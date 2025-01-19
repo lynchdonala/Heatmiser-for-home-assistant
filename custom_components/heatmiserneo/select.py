@@ -15,7 +15,7 @@ import voluptuous as vol
 
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
 from homeassistant.const import EntityCategory
-from homeassistant.core import HomeAssistant, ServiceCall, callback
+from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse, callback
 from homeassistant.helpers import entity_platform
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -23,6 +23,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from . import HeatmiserNeoConfigEntry, hold_duration_validation
 from .const import (
+    ATTR_FRIENDLY_MODE,
     ATTR_HOLD_DURATION,
     ATTR_HOLD_STATE,
     DEFAULT_PLUG_HOLD_DURATION,
@@ -32,6 +33,7 @@ from .const import (
     HEATMISER_TYPE_IDS_THERMOSTAT_NOT_HC,
     HEATMISER_TYPE_IDS_TIMER,
     PROFILE_0,
+    SERVICE_GET_DEVICE_PROFILE_DEFINITION,
     SERVICE_TIMER_HOLD_ON,
     ModeSelectOption,
 )
@@ -44,6 +46,7 @@ from .entity import (
     call_custom_action,
     profile_sensor_enabled_by_default,
 )
+from .helpers import get_profile_definition
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -319,6 +322,20 @@ async def async_base_set_profile(
     entity.data.active_profile = profile_id
 
 
+async def _async_get_profile_definition(
+    entity: HeatmiserNeoSelectEntity, service_call: ServiceCall
+):
+    """Set override with custom duration."""
+    coordinator = entity.coordinator
+    data = entity.data
+    profile_id = data.active_profile
+
+    friendly_mode = service_call.data.get(ATTR_FRIENDLY_MODE, False)
+    return get_profile_definition(
+        int(profile_id), coordinator, friendly_mode, data.device_id
+    )
+
+
 TIMER_SET_MODE = {
     ModeSelectOption.AUTO: set_timer_auto,
     ModeSelectOption.OVERRIDE_ON: lambda entity: set_timer_override(entity, True),
@@ -398,8 +415,6 @@ SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
     HeatmiserNeoSelectEntityDescription(
         key="heatmiser_neo_active_profile",
         options_fn=lambda entity: _profile_names(entity.coordinator),
-        # entity_category=EntityCategory.CONFIG,
-        # entity_registry_enabled_default=False,
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT_NOT_HC
             and not device.time_clock_mode
@@ -411,12 +426,13 @@ SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
         name="Active Profile",
         # translation_key="preheat_time",
         enabled_by_default_fn=profile_sensor_enabled_by_default,
+        custom_functions={
+            SERVICE_GET_DEVICE_PROFILE_DEFINITION: _async_get_profile_definition
+        },
     ),
     HeatmiserNeoSelectEntityDescription(
         key="heatmiser_neo_active_timer_profile",
         options_fn=lambda entity: _timer_profile_names(entity.coordinator),
-        # entity_category=EntityCategory.CONFIG,
-        # entity_registry_enabled_default=False,
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT_NOT_HC
             and device.time_clock_mode
@@ -428,6 +444,9 @@ SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
         name="Active Profile",
         # translation_key="preheat_time",
         enabled_by_default_fn=profile_sensor_enabled_by_default,
+        custom_functions={
+            SERVICE_GET_DEVICE_PROFILE_DEFINITION: _async_get_profile_definition
+        },
     ),
 )
 
@@ -530,6 +549,14 @@ async def async_setup_entry(
             vol.Optional(ATTR_HOLD_STATE, default=True): cv.boolean,
         },
         call_custom_action,
+    )
+    platform.async_register_entity_service(
+        SERVICE_GET_DEVICE_PROFILE_DEFINITION,
+        {
+            vol.Optional(ATTR_FRIENDLY_MODE, default=False): cv.boolean,
+        },
+        call_custom_action,
+        supports_response=SupportsResponse.ONLY,
     )
 
 

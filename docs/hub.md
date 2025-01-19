@@ -15,6 +15,13 @@ The NeoHub device contains system wide entities and configuration parameters
 
 - Away - whether the hub is away
 - Away End - if the hub is away and this date is set, then the hub will automatically turn off away mode at this time
+- Profile Format - The profile format in use
+  - Non Programmable - Heating profiles are not used
+  - 24HR mode - the same profile levels every day
+  - 5/2 Day mode - Different levels for weekdays and weekends
+  - 7 Day mode - Different levels every day
+- Profile Alt Timer Format - Only populated if the main Profile Format is Non Programmable. This format would be used by timer devices
+- Profile Heating Levels - Specifies the number of levels on heating profiles. It can be 4 or 6. Timer profiles are unaffected by this, they always have 4 levels
 
 ## Diagnostic Entities
 

@@ -113,6 +113,108 @@
           "tz1400": "UTC+14:00"
         }
       }
+    },
+    "sensor": {
+      "hub_profile_format": {
+        "name": "Profile Format",
+        "state": {
+          "zero": "Non Programmable",
+          "one": "24 HR",
+          "two": "5/2 Days",
+          "seven": "7 Day"
+        }
+      },
+      "hub_profile_alt_timer_format": {
+        "name": "Profile Alt Timer Format",
+        "state": {
+          "one": "24 HR",
+          "two": "5/2 Days",
+          "seven": "7 Day"
+        }
+      },
+      "hub_profile_heating_levels": {
+        "name": "Profile Heating Levels"
+      }
+    }
+  },
+  "services": {
+    "create_profile_two": {
+      "name": "Create Profile - 5 Day / 2 Day",
+      "description": "Creates or update a profile for weekdays and weekends",
+      "sections": {
+        "monday_levels": {
+          "name": "Monday Levels"
+        },
+        "sunday_levels": {
+          "name": "Sunday Levels"
+        }
+      }
+    },
+    "create_profile_seven": {
+      "name": "Create Profile - 7 Day",
+      "description": "Creates or update a profile for each day of the week",
+      "sections": {
+        "monday_levels": {
+          "name": "Monday Levels"
+        },
+        "tuesday_levels": {
+          "name": "Tuesday Levels"
+        },
+        "wednesday_levels": {
+          "name": "Wednesday Levels"
+        },
+        "thursday_levels": {
+          "name": "Thursday Levels"
+        },
+        "friday_levels": {
+          "name": "Friday Levels"
+        },
+        "saturday_levels": {
+          "name": "Saturday Levels"
+        },
+        "sunday_levels": {
+          "name": "Sunday Levels"
+        }
+      }
+    },
+    "create_timer_profile_two": {
+      "name": "Create Timer Profile - 5 Day / 2 Day",
+      "description": "Creates or update a timer profile for weekdays and weekends",
+      "sections": {
+        "monday_levels": {
+          "name": "Monday Levels"
+        },
+        "sunday_levels": {
+          "name": "Sunday Levels"
+        }
+      }
+    },
+    "create_timer_profile_seven": {
+      "name": "Create Timer Profile - 7 Day",
+      "description": "Creates or update a timer profile for each day of the week",
+      "sections": {
+        "monday_levels": {
+          "name": "Monday Levels"
+        },
+        "tuesday_levels": {
+          "name": "Tuesday Levels"
+        },
+        "wednesday_levels": {
+          "name": "Wednesday Levels"
+        },
+        "thursday_levels": {
+          "name": "Thursday Levels"
+        },
+        "friday_levels": {
+          "name": "Friday Levels"
+        },
+        "saturday_levels": {
+          "name": "Saturday Levels"
+        },
+        "sunday_levels": {
+          "name": "Sunday Levels"
+        }
+      }
     }
   }
 }
