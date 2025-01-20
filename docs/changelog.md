@@ -1,5 +1,8 @@
 # Change Log
 
+## 20250120
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/243 by @ocrease, changes to Zeroconf and Optimum start times.
+
 ## 20250116
 - Major release, version 3.0.0 now available. Massive thanks to @ocrease. This is a huge release, Please see previous notes for all changes.
 
