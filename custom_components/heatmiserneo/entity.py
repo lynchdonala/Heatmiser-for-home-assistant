@@ -41,7 +41,10 @@ class HeatmiserNeoEntityDescription(EntityDescription):
     icon_fn: Callable[[NeoStat], str | None] | None = None
     # extra_attrs: list[str] | None = None
     custom_functions: (
-        dict[str, Callable[[type[HeatmiserNeoEntity], ServiceCall], Awaitable[None]]]
+        dict[
+            str,
+            Callable[[type[HeatmiserNeoEntity], ServiceCall], Awaitable[Any | None]],
+        ]
         | None
     ) = None
 
@@ -57,7 +60,10 @@ class HeatmiserNeoHubEntityDescription(EntityDescription):
     icon_fn: Callable[[NeoStat], str | None] | None = None
     # extra_attrs: list[str] | None = None
     custom_functions: (
-        dict[str, Callable[[type[HeatmiserNeoEntity], ServiceCall], Awaitable[None]]]
+        dict[
+            str,
+            Callable[[type[HeatmiserNeoEntity], ServiceCall], Awaitable[Any | None]],
+        ]
         | None
     ) = None
 
@@ -163,12 +169,13 @@ class HeatmiserNeoEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
             return self.entity_description.enabled_by_default_fn(self)
         return super().entity_registry_enabled_default
 
-    async def call_custom_action(self, service_call: ServiceCall) -> None:
+    async def call_custom_action(self, service_call: ServiceCall) -> Any | None:
         """Call a custom action specified in the entity description."""
-        await self.entity_description.custom_functions.get(service_call.service)(
-            self, service_call
-        )
+        result = await self.entity_description.custom_functions.get(
+            service_call.service
+        )(self, service_call)
         self.coordinator.async_update_listeners()
+        return result
 
     async def async_cancel_away_or_holiday(self) -> None:
         """Cancel away/holiday mode."""
@@ -270,17 +277,18 @@ class HeatmiserNeoHubEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
             return self.entity_description.enabled_by_default_fn(self)
         return super().entity_registry_enabled_default
 
-    async def call_custom_action(self, service_call: ServiceCall) -> None:
+    async def call_custom_action(self, service_call: ServiceCall) -> Any | None:
         """Call a custom action specified in the entity description."""
-        await self.entity_description.custom_functions.get(service_call.service)(
-            self, service_call
-        )
+        result = await self.entity_description.custom_functions.get(
+            service_call.service
+        )(self, service_call)
         self.coordinator.async_update_listeners()
+        return result
 
 
 async def call_custom_action(
     entity: HeatmiserNeoEntity, service_call: ServiceCall
-) -> None:
+) -> Any | None:
     """Call a custom action specified in the entity description."""
     if (
         not entity.entity_description.custom_functions
@@ -291,8 +299,8 @@ async def call_custom_action(
             raise HomeAssistantError(
                 f"Entity {entity.entity_id} does not support service"
             )
-        return
-    await entity.call_custom_action(service_call)
+        return None
+    return await entity.call_custom_action(service_call)
 
 
 def _device_supports_away(dev: NeoStat) -> bool:

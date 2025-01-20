@@ -220,3 +220,123 @@ def profile_level(
             ## so that is the next level
             current_level = previous_level
     return current_level
+
+
+def to_dict(item):
+    """Convert an arbitrary object to a dict."""
+    match item:
+        case dict():
+            return {key: to_dict(value) for key, value in item.items()}
+        case list() | tuple():
+            return [to_dict(x) for x in item]
+        case object(__dict__=_):
+            return {key: to_dict(value) for key, value in vars(item).items()}
+        case _:
+            return item
+
+
+def get_profile_definition(
+    profile_id: int,
+    coordinator: HeatmiserNeoCoordinator,
+    friendly_mode: bool = False,
+    device_id: int = 0,
+):
+    """Set override with custom duration."""
+    profile_format = coordinator.system_data.FORMAT
+    profile = None
+    p0 = False
+    timer = False
+    if profile_id == 0:
+        profile = coordinator.profiles_0.get(device_id)
+        p0 = True
+    else:
+        profile = coordinator.profiles.get(profile_id)
+    if not profile:
+        if profile_format == ScheduleFormat.ZERO:
+            profile_format = coordinator.system_data.ALT_TIMER_FORMAT
+
+        if profile_id == 0:
+            profile = coordinator.timer_profiles_0.get(device_id)
+        else:
+            profile = coordinator.timer_profiles.get(profile_id)
+        if profile:
+            timer = True
+    if not profile:
+        return None
+    profile_dict = to_dict(profile)
+
+    levels = None
+    info = None
+    if p0:
+        info = profile_dict.get("profiles")[0]
+        del info["device"]
+    else:
+        info = profile_dict.get("info")
+
+    result = {"id": profile_id, "name": "PROFILE_0" if p0 else profile_dict["name"]}
+
+    if friendly_mode:
+        result["format"] = profile_format
+        result["type"] = "timer" if timer else "heating"
+
+    if timer:
+        if friendly_mode:
+            levels = {
+                wd: [
+                    {"time_on": e[0], "time_off": e[1]}
+                    for e in sorted(lv.values(), key=lambda x: x[0])
+                    if e[0] != "24:00"
+                ]
+                for wd, lv in info.items()
+            }
+
+            result["info"] = levels
+        else:
+            on_times = {
+                wd + "_on_times": [
+                    e[0]
+                    for e in sorted(lv.values(), key=lambda x: x[0])
+                    if e[0] != "24:00"
+                ]
+                for wd, lv in info.items()
+            }
+            off_times = {
+                wd + "_off_times": [
+                    e[1]
+                    for e in sorted(lv.values(), key=lambda x: x[0])
+                    if e[0] != "24:00"
+                ]
+                for wd, lv in info.items()
+            }
+            times = on_times | off_times
+            times = dict(sorted(times.items(), reverse=True))
+
+            result = result | times
+    elif friendly_mode:
+        levels = {
+            wd: [
+                {"time": e[0], "temperature": e[1]}
+                for e in sorted(lv.values(), key=lambda x: x[0])
+                if e[0] != "24:00"
+            ]
+            for wd, lv in info.items()
+        }
+        result["info"] = levels
+    else:
+        times = {
+            wd + "_times": [
+                e[0] for e in sorted(lv.values(), key=lambda x: x[0]) if e[0] != "24:00"
+            ]
+            for wd, lv in info.items()
+        }
+        temperatures = {
+            wd + "_temperatures": [
+                e[1] for e in sorted(lv.values(), key=lambda x: x[0]) if e[0] != "24:00"
+            ]
+            for wd, lv in info.items()
+        }
+        levels = times | temperatures
+        levels = dict(sorted(levels.items(), reverse=True))
+        result = result | levels
+
+    return result

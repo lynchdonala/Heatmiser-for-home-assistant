@@ -92,3 +92,151 @@ data:
 target:
   entity_id: binary_sensor.neohub_192_168_1_10_away
 ```
+
+## Profile Services
+
+### Rename Profile
+
+Change the name of an existing profile using the `heatmiserneo.rename_profile` action. You should target the NeoHub device itself or the Profile Format entity of the hub.
+
+```
+action: heatmiserneo.rename_profile
+data:
+  old_name: Old Profile
+  new_name: New Profile
+target:
+  entity_id: sensor.neohub_192_168_1_10_profile_format
+```
+
+### Delete Profile
+
+Delete an existing profile using the `heatmiserneo.delete_profile` action. You should target the NeoHub device itself or the Profile Format entity of the hub. Note, if any devices are using the profile, they will be moved to PROFILE_0 (eg profile managed on the device itself).
+
+```
+action: heatmiserneo.delete_profile
+data:
+  name: Profile Name
+target:
+  entity_id: sensor.neohub_192_168_1_10_profile_format
+```
+
+### Create/Update Profile
+
+This action allows creating or updating a heating profile. There are three versions of it, depending on the profile format being used in the hub:
+
+- For 24HR format (same levels every day) use `heatmiserneo.create_profile_one`
+- For 5/2 Day format (different levels for weekdays vs weekends) use `heatmiserneo.create_profile_two`
+- For 7 Day format (different levels every day) use `heatmiserneo.create_profile_seven`
+
+These have the following parameters in common:
+
+- Name - The name of the profile to create or update
+- Update - If set to `false` (the default) the service will be in create mode and the supplied name must not exist already. If set to `true`, the supplied name must exist and it must be for a heating profile
+- Times and Temperatures - Supply the times and temperatures for a particular weekday
+  - Times must be supplied in `HH:MM` 24h format
+  - Temperatures can be in 0.5 degree increments
+  - For 24HR mode, supply `sunday_times` and `sunday_temperatures`
+  - For 5/2 Day mode, additionally supply `monday_times` and `monday_temperatures`
+  - For 7 Day mode, supply times and temperatures for every day of the week
+  - The maximum number of levels allowed is dependent on the hub configuration. It will be either 4 or 6. The sensor `sensor.neohub_192_168_1_10_profile_heating_levels` has the current configuration. You can supply less levels but not more
+
+You should target the NeoHub device itself or the Profile Format entity of the hub.
+
+```
+action: heatmiserneo.create_profile_two
+data:
+  name: Existing Profile
+  update: true
+  monday_times:
+    - "06:45"
+    - "09:00"
+    - "17:00"
+    - "22:00"
+  monday_temperatures:
+    - 19.5
+    - 17
+    - 20.5
+    - 16
+  sunday_times:
+    - "06:45"
+    - "22:00"
+  sunday_temperatures:
+    - 19.5
+    - 16
+target:
+  entity_id: sensor.neohub_192_168_1_10_profile_format
+```
+
+### Create/Update Timer Profile
+
+This action allows creating or updating a timer profile. There are three versions of it, depending on the profile format being used in the hub:
+
+- For 24HR format (same levels every day) use `heatmiserneo.create_timer_profile_one`
+- For 5/2 Day format (different levels for weekdays vs weekends) use `heatmiserneo.create_timer_profile_two`
+- For 7 Day format (different levels every day) use `heatmiserneo.create_timer_profile_seven`
+
+These have the following parameters in common:
+
+- Name - The name of the profile to create or update
+- Update - If set to `false` (the default) the service will be in create mode and the supplied name must not exist already. If set to `true`, the supplied name must exist and it must be for a heating profile
+- On Times and Off Times - Supply the times to turn on and off
+  - Times must be supplied in `HH:MM` 24h format
+  - For 24HR mode, supply `sunday_on_times` and `sunday_off_times`
+  - For 5/2 Day mode, additionally supply `monday_on_times` and `monday_off_times`. Monday times will be used for weekdays and sunday times for weekends
+  - For 7 Day mode, supply times and temperatures for every day of the week
+  - Unlike heating profiles, the maximum number of timer levels is always 4. You can supply less levels but not more
+
+You should target the NeoHub device itself or the Profile Format entity of the hub.
+
+```
+action: heatmiserneo.create_timer_profile_two
+data:
+  name: Existing Profile
+  update: true
+  monday_on_times:
+    - "06:45"
+    - "09:00"
+    - "17:00"
+    - "22:00"
+  monday_off_times:
+    - "07:45"
+    - "10:30"
+    - "19:00"
+    - "01:00"
+  sunday_on_times:
+    - "06:45"
+    - "22:00"
+  sunday_off_times:
+    - "07:45"
+    - "01:00"
+target:
+  entity_id: sensor.neohub_192_168_1_10_profile_format
+```
+
+### Get Profile Definitions
+
+Use this action to retrieve all profiles defined in the hub. It has one optional parameter:
+
+- Friendly Mode - By default (or when set to false), the returned format closely matches the format of the create/update service calls, so it can be used to copy the format, make the necessary changes and then upload it using the relevant service. When set to true, the result is a bit easier to read.
+
+You should target the NeoHub device itself or the Profile Format entity of the hub.
+
+```
+action: heatmiserneo.get_profile_definitions
+data:
+  friendly_mode: false
+target:
+  entity_id: sensor.neohub_192_168_1_10_profile_format
+```
+
+### Get Device Profile Definition
+
+This is very similar to the hub level service, but instead you can get the definition of the profile that a particular device is using. Target the device itself or the Active Profile entity of the device.
+
+```
+action: heatmiserneo.get_device_profile_definition
+data:
+  friendly_mode: true
+target:
+  entity_id: select.landing_active_profile
+```

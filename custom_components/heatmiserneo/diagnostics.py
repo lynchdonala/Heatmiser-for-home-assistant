@@ -13,6 +13,7 @@ from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
 
 from . import HeatmiserNeoConfigEntry
+from .helpers import to_dict
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -62,10 +63,10 @@ async def async_get_config_entry_diagnostics(
         "devices": devices.result if devices else None,
         "device_list": device_list,
         "zones": zones,
-        "profiles": _to_dict(profiles),
-        "profiles_0": _to_dict(profiles_0),
-        "timer_profiles": _to_dict(timer_profiles),
-        "timer_profiles_0": _to_dict(timer_profiles_0),
+        "profiles": to_dict(profiles),
+        "profiles_0": to_dict(profiles_0),
+        "timer_profiles": to_dict(timer_profiles),
+        "timer_profiles_0": to_dict(timer_profiles_0),
         "raw_live_data": raw_live_data,
     }
 
@@ -93,15 +94,3 @@ async def retrieve_zone_device_list(zone: str, hub: NeoHub):
     response = await hub._send({"GET_DEVICE_LIST": zone})  # noqa: SLF001
     _LOGGER.debug("Response for GET_DEVICE_LIST on zone %s: %s", zone, response)
     return dict(vars(response)).get(zone, {})
-
-
-def _to_dict(item):
-    match item:
-        case dict():
-            return {key: _to_dict(value) for key, value in item.items()}
-        case list() | tuple():
-            return [_to_dict(x) for x in item]
-        case object(__dict__=_):
-            return {key: _to_dict(value) for key, value in vars(item).items()}
-        case _:
-            return item
