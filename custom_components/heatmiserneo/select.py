@@ -384,7 +384,7 @@ SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
     ),
     HeatmiserNeoSelectEntityDescription(
         key="heatmiser_neo_preheat_time",
-        options=[str(n) for n in range(4)],
+        options=[str(n) for n in range(6)],
         entity_category=EntityCategory.CONFIG,
         entity_registry_enabled_default=False,
         setup_filter_fn=lambda device, _: (
