@@ -623,9 +623,11 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
         key="heatmiser_neo_stat_hc_fan_speed",
         device_class=SensorDeviceClass.ENUM,
         options=[FAN_OFF, FAN_HIGH, FAN_MEDIUM, FAN_LOW, FAN_AUTO],
-        name="Fan Speed",
-        value_fn=lambda device: HEATMISER_FAN_SPEED_HA_FAN_MODE.get(
-            device.data.fan_speed
+        translation_key="fan_speed",
+        value_fn=lambda device: (
+            FAN_AUTO
+            if device.data.fan_control != "Manual"
+            else HEATMISER_FAN_SPEED_HA_FAN_MODE.get(device.data.fan_speed, FAN_OFF)
         ),
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_HC and not device.time_clock_mode

@@ -8,6 +8,7 @@ from homeassistant.components.climate import (
     FAN_HIGH,
     FAN_LOW,
     FAN_MEDIUM,
+    FAN_OFF,
     UnitOfTemperature,
 )
 
@@ -155,6 +156,7 @@ HEATMISER_FAN_SPEED_HA_FAN_MODE = {
     "Medium": FAN_MEDIUM,
     "Low": FAN_LOW,
     "Auto": FAN_AUTO,
+    "Off": FAN_OFF,
 }
 
 
