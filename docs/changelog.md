@@ -1,5 +1,8 @@
 # Change Log
 
+## 20250124
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/247 by @ocrease, Improves NeoStatHC compatibility.
+
 ## 20250120
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/243 by @ocrease, changes to Zeroconf and Optimum start times.
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/246 by @ocrease, Adds service for programming thermostats.
