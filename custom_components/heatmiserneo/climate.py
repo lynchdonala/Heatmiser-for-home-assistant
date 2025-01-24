@@ -457,7 +457,7 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
     def target_temperature_low(self):
         """Return the temperature we try to reach."""
         target = float(self.data.target_temperature)
-        if self.hvac_action() != HVACAction.OFF and target < 255:
+        if self.hvac_action != HVACAction.OFF and target < 255:
             return target
         return None
 

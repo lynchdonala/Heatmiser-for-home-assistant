@@ -121,6 +121,16 @@
       }
     },
     "sensor": {
+      "fan_speed": {
+        "name": "Fan Speed",
+        "state": {
+          "auto": "Auto",
+          "off": "Off",
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        }
+      },
       "hub_profile_format": {
         "name": "Profile Format",
         "state": {
