@@ -131,7 +131,10 @@ This action allows creating or updating a heating profile. There are three versi
 These have the following parameters in common:
 
 - Name - The name of the profile to create or update
-- Update - If set to `false` (the default) the service will be in create mode and the supplied name must not exist already. If set to `true`, the supplied name must exist and it must be for a heating profile
+- Mode - Controls the operation mode. Options are:
+  - `create` - Create a new profile. Profile name must not already exist
+  - `update` - Updates an existing profile. The profile name must exist and the profile must be a heating profile (as opposed to a timer profile)
+  - `upsert` - Update or create a profile. If the profile name already exists, it must be for a heating profile (as opposed to a timer profile)
 - Times and Temperatures - Supply the times and temperatures for a particular weekday
   - Times must be supplied in `HH:MM` 24h format
   - Temperatures can be in 0.5 degree increments
@@ -146,7 +149,7 @@ You should target the NeoHub device itself or the Profile Format entity of the h
 action: heatmiserneo.create_profile_two
 data:
   name: Existing Profile
-  update: true
+  mode: upsert
   monday_times:
     - "06:45"
     - "09:00"
@@ -178,7 +181,10 @@ This action allows creating or updating a timer profile. There are three version
 These have the following parameters in common:
 
 - Name - The name of the profile to create or update
-- Update - If set to `false` (the default) the service will be in create mode and the supplied name must not exist already. If set to `true`, the supplied name must exist and it must be for a heating profile
+- Mode - Controls the operation mode. Options are:
+  - `create` - Create a new profile. Profile name must not already exist
+  - `update` - Updates an existing profile. The profile name must exist and the profile must be a timer profile (as opposed to a heating profile)
+  - `upsert` - Update or create a profile. If the profile name already exists, it must be for a timer profile (as opposed to a heating profile)
 - On Times and Off Times - Supply the times to turn on and off
   - Times must be supplied in `HH:MM` 24h format
   - For 24HR mode, supply `sunday_on_times` and `sunday_off_times`
@@ -192,7 +198,7 @@ You should target the NeoHub device itself or the Profile Format entity of the h
 action: heatmiserneo.create_timer_profile_two
 data:
   name: Existing Profile
-  update: true
+  mode: upsert
   monday_on_times:
     - "06:45"
     - "09:00"
