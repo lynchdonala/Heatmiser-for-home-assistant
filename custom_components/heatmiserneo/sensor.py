@@ -478,9 +478,11 @@ def _convert_to_profile_info(
             f"Too many levels defined for {weekday}. Hub only supports {levels} levels"
         )
 
+    tuples = sorted([(list1[i], list2[i]) for i in range(len(list1))])
+
     return {
-        _convert_level_index(timer, levels, i): [list1[i], list2[i]]
-        if i < len(list1)
+        _convert_level_index(timer, levels, i): [tuples[i][0], tuples[i][1]]
+        if i < len(tuples)
         else [empty1, empty2]
         for i in range(levels)
     }
