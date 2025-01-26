@@ -1,5 +1,8 @@
 # Change Log
 
+## 20250126
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/248 by @ocrease, adds upsert mode to profile services.
+
 ## 20250124
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/247 by @ocrease, Improves NeoStatHC compatibility.
 
