@@ -155,10 +155,10 @@
       "description": "Creates or update a profile for weekdays and weekends",
       "sections": {
         "monday_levels": {
-          "name": "Monday Levels"
+          "name": "Weekday Levels"
         },
         "sunday_levels": {
-          "name": "Sunday Levels"
+          "name": "Weekend Levels"
         }
       }
     },
@@ -194,10 +194,10 @@
       "description": "Creates or update a timer profile for weekdays and weekends",
       "sections": {
         "monday_levels": {
-          "name": "Monday Levels"
+          "name": "Weekday Levels"
         },
         "sunday_levels": {
-          "name": "Sunday Levels"
+          "name": "Weekend Levels"
         }
       }
     },
@@ -226,6 +226,15 @@
         "sunday_levels": {
           "name": "Sunday Levels"
         }
+      }
+    }
+  },
+  "selector": {
+    "profile_create_mode": {
+      "options": {
+        "create": "Create",
+        "update": "Update",
+        "upsert": "Upsert"
       }
     }
   }

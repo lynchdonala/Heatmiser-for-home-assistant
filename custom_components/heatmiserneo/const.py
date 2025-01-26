@@ -48,7 +48,7 @@ ATTR_AWAY_END = "end"
 ATTR_NAME_OLD = "old_name"
 ATTR_NAME_NEW = "new_name"
 ATTR_FRIENDLY_MODE = "friendly_mode"
-ATTR_UPDATE = "update"
+ATTR_CREATE_MODE = "mode"
 ATTR_MONDAY_TIMES = "monday_times"
 ATTR_MONDAY_TEMPERATURES = "monday_temperatures"
 ATTR_TUESDAY_TIMES = "tuesday_times"
@@ -77,6 +77,16 @@ ATTR_SATURDAY_ON_TIMES = "saturday_on_times"
 ATTR_SATURDAY_OFF_TIMES = "saturday_off_times"
 ATTR_SUNDAY_ON_TIMES = "sunday_on_times"
 ATTR_SUNDAY_OFF_TIMES = "sunday_off_times"
+
+OPTION_CREATE_MODE_CREATE = "create"
+OPTION_CREATE_MODE_UPDATE = "update"
+OPTION_CREATE_MODE_UPSERT = "upsert"
+
+OPTIONS_CREATE_MODE = [
+    OPTION_CREATE_MODE_CREATE,
+    OPTION_CREATE_MODE_UPDATE,
+    OPTION_CREATE_MODE_UPSERT,
+]
 
 PROFILE_0 = "PROFILE_0"
 

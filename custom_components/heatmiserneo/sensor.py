@@ -35,6 +35,7 @@ import homeassistant.util.dt as dt_util
 
 from . import HeatmiserNeoConfigEntry
 from .const import (
+    ATTR_CREATE_MODE,
     ATTR_FRIDAY_OFF_TIMES,
     ATTR_FRIDAY_ON_TIMES,
     ATTR_FRIDAY_TEMPERATURES,
@@ -62,7 +63,6 @@ from .const import (
     ATTR_TUESDAY_ON_TIMES,
     ATTR_TUESDAY_TEMPERATURES,
     ATTR_TUESDAY_TIMES,
-    ATTR_UPDATE,
     ATTR_WEDNESDAY_OFF_TIMES,
     ATTR_WEDNESDAY_ON_TIMES,
     ATTR_WEDNESDAY_TEMPERATURES,
@@ -73,6 +73,9 @@ from .const import (
     HEATMISER_TYPE_IDS_HOLD,
     HEATMISER_TYPE_IDS_THERMOSTAT,
     HEATMISER_TYPE_IDS_THERMOSTAT_NOT_HC,
+    OPTION_CREATE_MODE_CREATE,
+    OPTION_CREATE_MODE_UPDATE,
+    OPTIONS_CREATE_MODE,
     SERVICE_CREATE_PROFILE_ONE,
     SERVICE_CREATE_PROFILE_SEVEN,
     SERVICE_CREATE_PROFILE_TWO,
@@ -188,7 +191,9 @@ async def async_setup_entry(
         SERVICE_CREATE_PROFILE_ONE,
         {
             vol.Required(ATTR_NAME): cv.string,
-            vol.Optional(ATTR_UPDATE, default=False): cv.boolean,
+            vol.Optional(ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE): vol.In(
+                OPTIONS_CREATE_MODE
+            ),
             vol.Required(ATTR_SUNDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
             vol.Required(ATTR_SUNDAY_TEMPERATURES): vol.All(
                 cv.ensure_list, [vol.Coerce(float)]
@@ -200,7 +205,9 @@ async def async_setup_entry(
         SERVICE_CREATE_PROFILE_TWO,
         {
             vol.Required(ATTR_NAME): cv.string,
-            vol.Optional(ATTR_UPDATE, default=False): cv.boolean,
+            vol.Optional(ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE): vol.In(
+                OPTIONS_CREATE_MODE
+            ),
             vol.Required(ATTR_MONDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
             vol.Required(ATTR_MONDAY_TEMPERATURES): vol.All(
                 cv.ensure_list, [vol.Coerce(float)]
@@ -216,7 +223,9 @@ async def async_setup_entry(
         SERVICE_CREATE_PROFILE_SEVEN,
         {
             vol.Required(ATTR_NAME): cv.string,
-            vol.Optional(ATTR_UPDATE, default=False): cv.boolean,
+            vol.Optional(ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE): vol.In(
+                OPTIONS_CREATE_MODE
+            ),
             vol.Required(ATTR_MONDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
             vol.Required(ATTR_MONDAY_TEMPERATURES): vol.All(
                 cv.ensure_list, [vol.Coerce(float)]
@@ -252,7 +261,9 @@ async def async_setup_entry(
         SERVICE_CREATE_TIMER_PROFILE_ONE,
         {
             vol.Required(ATTR_NAME): cv.string,
-            vol.Optional(ATTR_UPDATE, default=False): cv.boolean,
+            vol.Optional(ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE): vol.In(
+                OPTIONS_CREATE_MODE
+            ),
             vol.Required(ATTR_SUNDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
             vol.Required(ATTR_SUNDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
         },
@@ -262,7 +273,9 @@ async def async_setup_entry(
         SERVICE_CREATE_TIMER_PROFILE_TWO,
         {
             vol.Required(ATTR_NAME): cv.string,
-            vol.Optional(ATTR_UPDATE, default=False): cv.boolean,
+            vol.Optional(ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE): vol.In(
+                OPTIONS_CREATE_MODE
+            ),
             vol.Required(ATTR_MONDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
             vol.Required(ATTR_MONDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
             vol.Required(ATTR_SUNDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
@@ -274,7 +287,9 @@ async def async_setup_entry(
         SERVICE_CREATE_TIMER_PROFILE_SEVEN,
         {
             vol.Required(ATTR_NAME): cv.string,
-            vol.Optional(ATTR_UPDATE, default=False): cv.boolean,
+            vol.Optional(ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE): vol.In(
+                OPTIONS_CREATE_MODE
+            ),
             vol.Required(ATTR_MONDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
             vol.Required(ATTR_MONDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
             vol.Required(ATTR_TUESDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
@@ -385,21 +400,24 @@ async def async_create_profile(
             f"Requested profile format ({requested_format}) does not match hub format ({profile_format})"
         )
 
-    is_update = service_call.data.get(ATTR_UPDATE, False)
+    create_mode = service_call.data.get(ATTR_CREATE_MODE, OPTION_CREATE_MODE_CREATE)
     profile_name = service_call.data[ATTR_NAME]
     profile_id, timer_profile = _check_profile_name(profile_name, coordinator)
 
     if not profile_id:
-        if is_update:
+        if create_mode == OPTION_CREATE_MODE_UPDATE:
             raise HomeAssistantError(
                 f"Could not find existing profile with name '{profile_name}'"
             )
-    elif not is_update:
-        raise HomeAssistantError(f"A profile with name '{profile_name}' already exists")
-    elif timer != timer_profile:
-        raise HomeAssistantError(
-            f"A {"heating" if timer else "timer"} profile with name '{profile_name}' already exists"
-        )
+    else:
+        if create_mode == OPTION_CREATE_MODE_CREATE:
+            raise HomeAssistantError(
+                f"A profile with name '{profile_name}' already exists"
+            )
+        if timer != timer_profile:
+            raise HomeAssistantError(
+                f"A {"heating" if timer else "timer"} profile with name '{profile_name}' already exists"
+            )
 
     heating_levels = 4 if timer else coordinator.system_data.HEATING_LEVELS
 
@@ -410,7 +428,7 @@ async def async_create_profile(
     }
 
     msg_details = {}
-    if is_update:
+    if profile_id:
         msg_details["ID"] = profile_id
     msg_details["info"] = weekday_levels
     msg_details["name"] = profile_name
@@ -460,9 +478,11 @@ def _convert_to_profile_info(
             f"Too many levels defined for {weekday}. Hub only supports {levels} levels"
         )
 
+    tuples = sorted([(list1[i], list2[i]) for i in range(len(list1))])
+
     return {
-        _convert_level_index(timer, levels, i): [list1[i], list2[i]]
-        if i < len(list1)
+        _convert_level_index(timer, levels, i): [tuples[i][0], tuples[i][1]]
+        if i < len(tuples)
         else [empty1, empty2]
         for i in range(levels)
     }

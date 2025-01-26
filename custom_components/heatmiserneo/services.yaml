@@ -146,18 +146,24 @@ create_profile_one:
   fields:
     name:
       name: Profile Name
-      description: Profile Name. If update is false, it must not be in use already
+      description: Profile Name. If mode is Create, it must not be in use already
       required: true
       example: New Profile
       selector:
         text:
-    update:
-      name: Update
-      description: Set to true to update an existing profile
-      required: false
-      example: false
+    mode:
+      name: Mode
+      description: Choose the mode of operation
+      required: true
+      default: create
+      example: upsert
       selector:
-        boolean:
+        select:
+          options:
+            - "create"
+            - "update"
+            - "upsert"
+          translation_key: profile_create_mode
     sunday_times:
       name: Times
       description: Profile level time in HH:MM format
@@ -183,18 +189,24 @@ create_profile_two:
   fields:
     name:
       name: Profile Name
-      description: Profile Name. If update is false, it must not be in use already
+      description: Profile Name. If mode is Create, it must not be in use already
       required: true
       example: New Profile
       selector:
         text:
-    update:
-      name: Update
-      description: Set to true to update an existing profile
-      required: false
-      example: false
+    mode:
+      name: Mode
+      description: Choose the mode of operation
+      required: true
+      default: create
+      example: upsert
       selector:
-        boolean:
+        select:
+          options:
+            - "create"
+            - "update"
+            - "upsert"
+          translation_key: profile_create_mode
     monday_levels:
       collapsed: true
       fields:
@@ -242,18 +254,24 @@ create_profile_seven:
   fields:
     name:
       name: Profile Name
-      description: Profile Name. If update is false, it must not be in use already
+      description: Profile Name. If mode is Create, it must not be in use already
       required: true
       example: New Profile
       selector:
         text:
-    update:
-      name: Update
-      description: Set to true to update an existing profile
-      required: false
-      example: false
+    mode:
+      name: Mode
+      description: Choose the mode of operation
+      required: true
+      default: create
+      example: upsert
       selector:
-        boolean:
+        select:
+          options:
+            - "create"
+            - "update"
+            - "upsert"
+          translation_key: profile_create_mode
     monday_levels:
       collapsed: true
       fields:
@@ -396,18 +414,24 @@ create_timer_profile_one:
   fields:
     name:
       name: Profile Name
-      description: Profile Name. If update is false, it must not be in use already
+      description: Profile Name. If mode is Create, it must not be in use already
       required: true
       example: New Profile
       selector:
         text:
-    update:
-      name: Update
-      description: Set to true to update an existing profile
-      required: false
-      example: false
+    mode:
+      name: Mode
+      description: Choose the mode of operation
+      required: true
+      default: create
+      example: upsert
       selector:
-        boolean:
+        select:
+          options:
+            - "create"
+            - "update"
+            - "upsert"
+          translation_key: profile_create_mode
     sunday_on_times:
       name: Switch On Times
       description: Times to switch on in HH:MM format
@@ -433,18 +457,24 @@ create_timer_profile_two:
   fields:
     name:
       name: Profile Name
-      description: Profile Name. If update is false, it must not be in use already
+      description: Profile Name. If mode is Create, it must not be in use already
       required: true
       example: New Profile
       selector:
         text:
-    update:
-      name: Update
-      description: Set to true to update an existing profile
-      required: false
-      example: false
+    mode:
+      name: Mode
+      description: Choose the mode of operation
+      required: true
+      default: create
+      example: upsert
       selector:
-        boolean:
+        select:
+          options:
+            - "create"
+            - "update"
+            - "upsert"
+          translation_key: profile_create_mode
     monday_levels:
       collapsed: true
       fields:
@@ -492,18 +522,24 @@ create_timer_profile_seven:
   fields:
     name:
       name: Profile Name
-      description: Profile Name. If update is false, it must not be in use already
+      description: Profile Name. If mode is Create, it must not be in use already
       required: true
       example: New Profile
       selector:
         text:
-    update:
-      name: Update
-      description: Set to true to update an existing profile
-      required: false
-      example: false
+    mode:
+      name: Mode
+      description: Choose the mode of operation
+      required: true
+      default: create
+      example: upsert
       selector:
-        boolean:
+        select:
+          options:
+            - "create"
+            - "update"
+            - "upsert"
+          translation_key: profile_create_mode
     monday_levels:
       collapsed: true
       fields:
