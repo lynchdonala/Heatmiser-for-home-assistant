@@ -1,45 +1,62 @@
 # Change Log
 
+## 20250129
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/251 by @ocrease, fixes issues with HVAC Mode configuration for NeoStat HC
+
 ## 20250126
+
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/248 by @ocrease, adds upsert mode to profile services.
 
 ## 20250124
+
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/247 by @ocrease, Improves NeoStatHC compatibility.
 
 ## 20250120
+
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/243 by @ocrease, changes to Zeroconf and Optimum start times.
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/246 by @ocrease, Adds service for programming thermostats.
 
 ## 20250116
+
 - Major release, version 3.0.0 now available. Massive thanks to @ocrease. This is a huge release, Please see previous notes for all changes.
 
 ## 20241230
+
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/235 by @ocrease, beta 13 fixes.
 
 ## 20241227
-- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/232 by @ocrease, documentation update. 
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/232 by @ocrease, documentation update.
 
 ## 20241224
+
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/231 by @ocrease, documentation improvements.
 
 ## 20241220
+
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/230 by @ocrease, combines away sensors, tweaks repeater button.
 
 ## 20241219
+
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/227 by @ocrease, adds service for holiday/away mode control.
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/228 by @ocrease, fixes naming of remove button.
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/229 by @ocrease, Add documentation using GitHub pages.
 
 ## 20241218
+
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/226 by @ocrease, fixes profile issues in beta9
 
 ## 20241217
+
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/225 by @ocrease, addresses issues with profiles not being available and other bugs in beta8.
 
 ## 20241212
+
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/224 by @ocrease, Bumps NeoHub API version and fixes issues in beta7.
 
 ## 20241212
+
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/223 by @ocrease, Bumps NeoHub API version and adds support for repeater and profile features.
 
 ## 20241206
@@ -67,7 +84,7 @@
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/213 by @ocrease, improves overall quality.
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/214 by @ocrease, fixing sensor type.
-- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/216 by @ocrease, improves robustness when devices are no longer avalible.
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/216 by @ocrease, improves robustness when devices are no longer available.
 
 ## 20241105
 

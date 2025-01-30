@@ -5,7 +5,6 @@ import asyncio
 from collections import OrderedDict
 from dataclasses import dataclass
 from datetime import timedelta
-from functools import cached_property
 import logging
 
 from neohubapi.neohub import HCMode, NeoHub, NeoStat
@@ -48,6 +47,8 @@ from .const import (
     HEATMISER_TYPE_IDS_THERMOSTAT,
     SERVICE_HOLD_OFF,
     SERVICE_HOLD_ON,
+    AvailableMode,
+    GlobalSystemType,
 )
 from .entity import HeatmiserNeoEntity, HeatmiserNeoEntityDescription
 
@@ -173,26 +174,61 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
         self._attr_max_temp = neostat.max_temperature_limit
         self._attr_min_temp = neostat.min_temperature_limit
         self._attr_preset_modes = [PRESET_HOME, PRESET_BOOST, PRESET_AWAY]
-        self._attr_fan_modes = [FAN_OFF, FAN_LOW, FAN_MEDIUM, FAN_HIGH, FAN_AUTO]
+
+        supported_features = (
+            ClimateEntityFeature.TURN_ON
+            | ClimateEntityFeature.TURN_OFF
+            | ClimateEntityFeature.PRESET_MODE
+        )
 
         hvac_modes = []
+
+        heating = False
+        cooling = False
         if hasattr(neostat, "standby"):
             hvac_modes.append(HVACMode.OFF)
         # The following devices support Heating modes
         if self.data.device_type in HEATMISER_TYPE_IDS_HC:
-            if self.system_data.GLOBAL_SYSTEM_TYPE == "HeatOnly":
+            if self.system_data.GLOBAL_SYSTEM_TYPE == GlobalSystemType.HEAT_ONLY:
                 hvac_modes.append(HVACMode.HEAT)
-            elif self.system_data.GLOBAL_SYSTEM_TYPE == "CoolOnly":
+            elif self.system_data.GLOBAL_SYSTEM_TYPE == GlobalSystemType.COOL_ONLY:
                 hvac_modes.append(HVACMode.COOL)
             else:
-                hvac_modes.append(HVACMode.HEAT)
-                hvac_modes.append(HVACMode.COOL)
-                hvac_modes.append(HVACMode.HEAT_COOL)
-            hvac_modes.append(HVACMode.FAN_ONLY)
+                if AvailableMode.HEAT in neostat.available_modes:
+                    hvac_modes.append(HVACMode.HEAT)
+                    heating = True
+                if AvailableMode.COOL in neostat.available_modes:
+                    hvac_modes.append(HVACMode.COOL)
+                    cooling = True
+                if AvailableMode.AUTO in neostat.available_modes:
+                    hvac_modes.append(HVACMode.HEAT_COOL)
+                    heating = True
+                    cooling = True
+
+            if AvailableMode.VENT in neostat.available_modes:
+                supported_features = supported_features | ClimateEntityFeature.FAN_MODE
+                hvac_modes.append(HVACMode.FAN_ONLY)
+                self._attr_fan_modes = [
+                    FAN_OFF,
+                    FAN_LOW,
+                    FAN_MEDIUM,
+                    FAN_HIGH,
+                    FAN_AUTO,
+                ]
         else:
             hvac_modes.append(HVACMode.HEAT)
 
+        if heating and cooling:
+            supported_features = (
+                supported_features | ClimateEntityFeature.TARGET_TEMPERATURE_RANGE
+            )
+        else:
+            supported_features = (
+                supported_features | ClimateEntityFeature.TARGET_TEMPERATURE
+            )
+
         self._attr_hvac_modes = hvac_modes
+        self._attr_supported_features = supported_features
 
     async def async_set_hvac_mode(self, hvac_mode):
         """Set hvac mode."""
@@ -406,36 +442,6 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
         await self.coordinator.async_request_refresh()
 
         return result
-
-    @cached_property
-    def supported_features(self):
-        """Return the list of supported features."""
-        # Do this based on device type
-
-        # All thermostats should have on and off
-        supported_features = (
-            ClimateEntityFeature.TURN_ON
-            | ClimateEntityFeature.TURN_OFF
-            | ClimateEntityFeature.PRESET_MODE
-        )
-
-        if self.data.device_type in HEATMISER_TYPE_IDS_HC:
-            # neoStat-HC
-            if self.system_data.GLOBAL_SYSTEM_TYPE not in ["HeatOnly", "CoolOnly"]:
-                supported_features = (
-                    supported_features | ClimateEntityFeature.TARGET_TEMPERATURE_RANGE
-                )
-            else:
-                supported_features = (
-                    supported_features | ClimateEntityFeature.TARGET_TEMPERATURE
-                )
-            supported_features = supported_features | ClimateEntityFeature.FAN_MODE
-        else:
-            supported_features = (
-                supported_features | ClimateEntityFeature.TARGET_TEMPERATURE
-            )
-
-        return supported_features
 
     @property
     def target_temperature(self):

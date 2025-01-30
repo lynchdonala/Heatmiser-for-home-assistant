@@ -9,27 +9,34 @@ import socket
 import voluptuous as vol
 
 from homeassistant import config_entries
-from homeassistant.components.climate import HVACMode
 from homeassistant.components.zeroconf import ZeroconfServiceInfo
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import callback
 import homeassistant.helpers.config_validation as cv
-from homeassistant.helpers.entity_registry import (
-    async_entries_for_config_entry,
-    async_get,
-)
 
-from .const import CONF_HVAC_MODES, DEFAULT_HOST, DEFAULT_PORT, DOMAIN, AvailableMode
+from . import HeatmiserNeoConfigEntry
+from .const import (
+    CONF_HVAC_MODES,
+    DEFAULT_HOST,
+    DEFAULT_PORT,
+    DOMAIN,
+    HEATMISER_TYPE_IDS_HC,
+    AvailableMode,
+    GlobalSystemType,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
-modes = {
-    AvailableMode.AUTO: HVACMode.HEAT_COOL,
-    AvailableMode.COOL: HVACMode.COOL,
-    AvailableMode.HEAT: HVACMode.HEAT,
-    AvailableMode.VENT: HVACMode.FAN_ONLY,
+AVAILABLE_MODE_MAPPING = {
+    AvailableMode.AUTO: "Auto",
+    AvailableMode.COOL: "Cool",
+    AvailableMode.HEAT: "Heat",
+    AvailableMode.VENT: "Fan Only",
 }
-default_modes = [HVACMode.HEAT]
+
+SCHEMA_ATTR_DEVICE = "device"
+SCHEMA_ATTR_HVAC_MODES = "hvac_modes"
+SCHEMA_ATTR_MORE = "more"
 
 
 @config_entries.HANDLERS.register("heatmiserneo")
@@ -126,14 +133,10 @@ class FlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 class OptionsFlowHandler(config_entries.OptionsFlow):
     """Handles options flow for the component."""
 
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+    def __init__(self, config_entry: HeatmiserNeoConfigEntry) -> None:
         """Initialize options flow."""
-        self.config_entry = config_entry
-        self.config = (
-            deepcopy(config_entry.options[CONF_HVAC_MODES])
-            if CONF_HVAC_MODES in self.config_entry.options
-            else {}
-        )
+        # self.config_entry = config_entry
+        self.config = deepcopy(config_entry.options.get(CONF_HVAC_MODES, {}))
 
     async def async_step_init(
         self, user_input: dict[str, str] | None = None
@@ -141,44 +144,38 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         """Manage the options for the custom component."""
         errors: dict[str, str] = {}
 
-        # Grab all devices from the entity registry so we can populate the
-        # dropdown list that will allow a user to configure a device.
-        entity_registry = async_get(self.hass)
-        devices = async_entries_for_config_entry(
-            entity_registry, self.config_entry.entry_id
+        devices, _ = self.config_entry.runtime_data.coordinator.data
+        system_data = self.config_entry.runtime_data.coordinator.system_data
+
+        devices = sorted(
+            [
+                k
+                for k, v in devices.items()
+                if v.device_type in HEATMISER_TYPE_IDS_HC and not v.time_clock_mode
+            ]
         )
-        stats = {
-            e.unique_id: e.capabilities
-            for e in devices
-            if e.entity_id.startswith("climate.")
-        }
+
+        if len(devices) == 0:
+            # return await self.async_step_none()
+            return self.async_abort(reason="no_devices_supported")
 
         if user_input is not None:
             _LOGGER.debug("user_input: %s", user_input)
             _LOGGER.debug("original config: %s", self.config)
 
             # Remove any devices where hvac_modes have been unset.
-            remove_devices = [
-                unique_id
-                for unique_id in stats
-                if unique_id == user_input["device"]
-                if len(user_input["hvac_modes"]) == 0
-            ]
-            for unique_id in remove_devices:
-                if unique_id in self.config:
-                    self.config.pop(unique_id)
-
-            if len(user_input["hvac_modes"]) != 0:
-                if not errors:
-                    # Add the new device config.
-                    self.config[user_input["device"]] = user_input["hvac_modes"]
+            name = user_input[SCHEMA_ATTR_DEVICE]
+            if len(user_input[SCHEMA_ATTR_HVAC_MODES]) == 0:
+                self.config.pop(name)
+            elif not errors:
+                self.config[name] = user_input[SCHEMA_ATTR_HVAC_MODES]
 
             _LOGGER.debug("updated config: %s", self.config)
 
             if not errors:
                 # If user selected the 'more' tickbox, show this form again
                 # so they can configure additional devices.
-                if user_input.get("more", False):
+                if user_input.get(SCHEMA_ATTR_MORE, False):
                     return await self.async_step_init()
 
                 # Value of data will be set on the options property of the config_entry instance.
@@ -186,15 +183,28 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     title="", data={CONF_HVAC_MODES: self.config}
                 )
 
+        system_modes = []
+        if system_data.GLOBAL_SYSTEM_TYPE == GlobalSystemType.HEAT_ONLY:
+            system_modes.append(AvailableMode.HEAT)
+        elif system_data.GLOBAL_SYSTEM_TYPE == GlobalSystemType.COOL_ONLY:
+            system_modes.append(AvailableMode.COOL)
+        else:
+            system_modes.append(AvailableMode.HEAT)
+            system_modes.append(AvailableMode.COOL)
+            system_modes.append(AvailableMode.AUTO)
+        system_modes.append(AvailableMode.VENT)
+
+        mode_options = {
+            k: v for k, v in AVAILABLE_MODE_MAPPING.items() if k in system_modes
+        }
+
         options_schema = vol.Schema(
             {
-                vol.Optional("device", default=list(stats.keys())): vol.In(
-                    stats.keys()
-                ),
+                vol.Optional(SCHEMA_ATTR_DEVICE, default=devices): vol.In(devices),
                 vol.Optional(
-                    "hvac_modes", default=list(default_modes)
-                ): cv.multi_select(modes),
-                vol.Optional("more"): cv.boolean,
+                    SCHEMA_ATTR_HVAC_MODES, default=list(mode_options)
+                ): cv.multi_select(mode_options),
+                vol.Optional(SCHEMA_ATTR_MORE): cv.boolean,
             }
         )
 

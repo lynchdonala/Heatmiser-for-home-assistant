@@ -85,6 +85,7 @@ from .const import (
     SERVICE_DELETE_PROFILE,
     SERVICE_GET_PROFILE_DEFINITIONS,
     SERVICE_RENAME_PROFILE,
+    GlobalSystemType,
 )
 from .coordinator import HeatmiserNeoCoordinator
 from .entity import (
@@ -616,7 +617,7 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
                 device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT_NOT_HC
                 or (
                     device.device_type in HEATMISER_TYPE_IDS_HC
-                    and sys_data.GLOBAL_SYSTEM_TYPE != "CoolOnly"
+                    and sys_data.GLOBAL_SYSTEM_TYPE != GlobalSystemType.COOL_ONLY
                 )
             )
             and not device.time_clock_mode
@@ -633,7 +634,7 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
         setup_filter_fn=lambda device, sys_data: (
             device.device_type in HEATMISER_TYPE_IDS_HC
             and not device.time_clock_mode
-            and sys_data.GLOBAL_SYSTEM_TYPE != "HeatOnly"
+            and sys_data.GLOBAL_SYSTEM_TYPE != GlobalSystemType.HEAT_ONLY
         ),
         unit_of_measurement_fn=lambda _, sys_data: (
             HEATMISER_TEMPERATURE_UNIT_HA_UNIT.get(sys_data.CORF, None)

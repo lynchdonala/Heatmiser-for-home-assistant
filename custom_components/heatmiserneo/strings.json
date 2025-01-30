@@ -19,6 +19,9 @@
     }
   },
   "options": {
+    "abort": {
+      "no_devices_supported": "No devices have configurable HVAC modes"
+    },
     "step": {
       "init": {
         "title": "Configure HVAC Modes",
@@ -28,6 +31,11 @@
           "more": "Configure another device"
         },
         "description": "Select a device and configure the HVAC modes"
+      },
+      "none": {
+        "title": "Configure HVAC Modes",
+        "data": {},
+        "description": "No devices have configurable HVAC modes"
       }
     },
     "error": {}

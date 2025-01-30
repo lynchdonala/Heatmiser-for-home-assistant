@@ -144,6 +144,15 @@ class AvailableMode(str, enum.Enum):
     AUTO = "auto"
 
 
+class GlobalSystemType(str, enum.Enum):
+    """Global System Types for NeoStat HC."""
+
+    HEAT_ONLY = "HeatOnly"
+    COOL_ONLY = "CoolOnly"
+    HEAT_COOL = "HeatOrCool"
+    INDEPENDENT = "Independent"
+
+
 class ModeSelectOption(str, enum.Enum):
     """Operating mode options for NeoPlugs and NeoStats in timer mode."""
 
