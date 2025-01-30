@@ -81,6 +81,15 @@ async def async_set_floor_limit(entity: HeatmiserNeoEntity, val: float) -> None:
     setattr(entity.data._data_, "ENG_FLOOR_LIMIT", int(val))
 
 
+async def async_set_user_limit(entity: HeatmiserNeoEntity, val: int) -> None:
+    """Set the floor limit temperature on a device."""
+    message = {"USER_LIMIT": [val, [entity.data.name]]}
+    # TODO this should be in the API
+    await entity.coordinator.hub._send(message)  # noqa: SLF001
+    entity.coordinator.hub._update_timestamps["TIMESTAMP_ENGINEERS"] = 0  # noqa: SLF001
+    setattr(entity.data._data_, "USER_LIMIT", int(val))
+
+
 NUMBERS: tuple[HeatmiserNeoNumberEntityDescription, ...] = (
     HeatmiserNeoNumberEntityDescription(
         key="heatmiser_neo_frost_temp",
@@ -133,6 +142,25 @@ NUMBERS: tuple[HeatmiserNeoNumberEntityDescription, ...] = (
         value_fn=lambda dev: dev._data_.ENG_FLOOR_LIMIT,
         set_value_fn=async_set_floor_limit,
         native_step=1,
+        unit_of_measurement_fn=lambda _, sys_data: (
+            HEATMISER_TEMPERATURE_UNIT_HA_UNIT.get(sys_data.CORF, None)
+        ),
+        mode=NumberMode.BOX,
+    ),
+    HeatmiserNeoNumberEntityDescription(
+        key="heatmiser_neo_user_limit",
+        name="User Limit",
+        device_class=NumberDeviceClass.TEMPERATURE,
+        entity_category=EntityCategory.CONFIG,
+        setup_filter_fn=lambda device, _: (
+            device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT
+            and not device.time_clock_mode
+        ),
+        value_fn=lambda dev: dev._data_.USER_LIMIT,
+        set_value_fn=async_set_user_limit,
+        native_step=1,
+        native_min_value=0,
+        native_max_value=10,
         unit_of_measurement_fn=lambda _, sys_data: (
             HEATMISER_TEMPERATURE_UNIT_HA_UNIT.get(sys_data.CORF, None)
         ),
