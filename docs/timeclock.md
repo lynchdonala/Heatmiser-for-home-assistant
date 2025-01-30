@@ -17,6 +17,7 @@ TimeClocks and NeoPlugs are modeled as a select entity in Home Assistant.
   - PROFILE_0 is a special profile when the profile is managed directly on the thermostat rather than a shared profile managed in the hub
 - Profile Next Time - The next time there is a state change managed by the profile
 - Profile State - The profile's current state. There is no next state sensor since it is just the opposite of the current state
+- Lock - Lock or unlock the keypad on a thermostat. Use the standard `lock.lock` service if you want to set a new pin number
 
   > ##### INFO
   >

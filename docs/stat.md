@@ -30,6 +30,7 @@ There are three preset modes:
 - Profile Next Time - The next time there is a state change managed by the profile
 - Profile Current Temeperature - The profile's current temperature
 - Profile Next Temeperature - The profile's temperature at the next state change
+- Lock - Lock or unlock the keypad on a thermostat. Use the standard `lock.lock` service if you want to set a new pin number
 
   > ##### INFO
   >
@@ -42,6 +43,7 @@ There are three preset modes:
 - Optimum Start - maxiumu preheat period
 - Switching Differential - How far the temperature has to drop before heat is called for
 - Floor Limit Temperature - Thermostat will stop calling for heat if the floor reaches this temperature (only if a floor sensor is in use)
+- User Limit - if thermostat is locked, this the temperature change allowed without unlocking the thermostat.
 
 ## Diagnostic Entities
 
