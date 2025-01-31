@@ -45,6 +45,11 @@
     "error": {}
   },
   "entity": {
+    "lock": {
+      "lock": {
+        "name": "Lock"
+      }
+    },
     "select": {
       "timer_mode": {
         "state": {
