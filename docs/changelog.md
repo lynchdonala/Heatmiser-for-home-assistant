@@ -2,6 +2,10 @@
 
 ## 20250129
 
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/253 by @ocrease, added lock and user limit
+
+## 20250129
+
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/251 by @ocrease, fixes issues with HVAC Mode configuration for NeoStat HC
 
 ## 20250126
