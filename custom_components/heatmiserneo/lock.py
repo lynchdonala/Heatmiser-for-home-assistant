@@ -5,13 +5,15 @@
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 import logging
+import re
 from typing import Any
 
 from neohubapi.neohub import NeoHub, NeoStat
 
-from homeassistant.components.lock import LockEntity, LockEntityDescription
+from homeassistant.components.lock import DOMAIN, LockEntity, LockEntityDescription
 from homeassistant.const import ATTR_CODE
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import HeatmiserNeoConfigEntry
@@ -48,12 +50,29 @@ async def async_setup_entry(
     )
 
 
-async def async_lock_device(entity: HeatmiserNeoEntity, **kwargs):
+# Ideally we would set this on the lock entity itself
+# but doing so adds a code entry dialog to the UI
+# which we don't want
+pin_format = r"^\d{1,4}$"
+pin_format_cmp = re.compile(pin_format)
+
+
+async def _async_lock_device(entity: HeatmiserNeoEntity, **kwargs):
     """Lock a thermostat."""
-    await entity.data.set_lock(int(kwargs.get(ATTR_CODE, 0)))
+    code = str(kwargs.get(ATTR_CODE, 0))
+    if not pin_format_cmp.match(code):
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="add_default_code",
+            translation_placeholders={
+                "entity_id": entity.entity_id,
+                "code_format": pin_format,
+            },
+        )
+    await entity.data.set_lock(int(code))
 
 
-async def async_unlock_device(entity: HeatmiserNeoEntity):
+async def _async_unlock_device(entity: HeatmiserNeoEntity):
     """Unlock a thermostat."""
     await entity.data.unlock()
 
@@ -76,8 +95,8 @@ LOCKS: tuple[HeatmiserNeoLockEntityDescription, ...] = (
         translation_key="lock",
         value_fn=lambda entity: entity.data.lock,
         default_pin_fn=lambda entity: entity.data.pin_number,
-        lock_fn=async_lock_device,
-        unlock_fn=async_unlock_device,
+        lock_fn=_async_lock_device,
+        unlock_fn=_async_unlock_device,
         setup_filter_fn=lambda device, _: (
             device.device_type in HEATMISER_TYPE_IDS_LOCK
         ),
