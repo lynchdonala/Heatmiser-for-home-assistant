@@ -1,5 +1,9 @@
 # Change Log
 
+## 20250201
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/254 by @ocrease, improved options configuration flow
+
 ## 20250129
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/253 by @ocrease, added lock and user limit

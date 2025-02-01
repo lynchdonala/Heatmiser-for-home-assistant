@@ -12,7 +12,7 @@ The thermostats work like any other Home Assistant climate entity.
 There are three preset modes:
 
 - Home - The thermostat will follow a profile
-- Boost - The thermostat is set to 2 degrees higher for 30 minutes
+- Boost - The thermostat is set to 2 degrees higher for 30 minutes (The default duration and temperature boost can be configured using Configure on the hub entry)
 - Away - The thermostat is in frost protection mode. The thermostat is not following a profile and will only call for heat if the temperature drops below the configured frost protection temperature.
   > ##### WARNING
   >
