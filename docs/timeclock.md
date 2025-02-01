@@ -9,8 +9,8 @@ TimeClocks and NeoPlugs are modeled as a select entity in Home Assistant.
 
 - Mode:
   - Auto - follow the set profile
-  - Override On - ignore the profile and turn the output ON for 30 minutes. Return to Auto once the duration has passed
-  - Override Off - ignore the profile and turn the output OFF for 30 minutes. Return to Auto once the duration has passed
+  - Override On - ignore the profile and turn the output ON for 30 minutes. Return to Auto once the duration has passed. (The default override duration can be configured using Configure on the hub entry)
+  - Override Off - ignore the profile and turn the output OFF for 30 minutes. Return to Auto once the duration has passed. (The default override duration can be configured using Configure on the hub entry)
   - Standby - ignore the profile, output is permantently off
   - Away - ignore the profile. Output is off (If a holiday is set instead, Away will still be displayed but the device will go back to auto at the end of the holiday)
 - Active Profile - Can select a different profile for the thermostat.
@@ -35,8 +35,8 @@ NeoPlugs are similar to TimeClocks, but have the ability to be set to ON or OFF 
 - Auto - follow the set profile
 - On - profile disabled. Output is ON indefinitely
 - Off - profile disabled. Output is OFF indefinitely
-- Override On - ignore the profile and turn the output ON for 30 minutes. Return to Auto once the duration has passed
-- Override Off - ignore the profile and turn the output OFF for 30 minutes. Return to Auto once the duration has passed
+- Override On - ignore the profile and turn the output ON for 30 minutes. Return to Auto once the duration has passed. (The default override duration can be configured using Configure on the hub entry)
+- Override Off - ignore the profile and turn the output OFF for 30 minutes. Return to Auto once the duration has passed. (The default override duration can be configured using Configure on the hub entry)
 
 ## Helper Sensors/Entities
 

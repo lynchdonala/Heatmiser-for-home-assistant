@@ -19,23 +19,46 @@
     }
   },
   "options": {
-    "abort": {
-      "no_devices_supported": "No devices have configurable HVAC modes"
-    },
     "step": {
-      "init": {
-        "title": "Configure HVAC Modes",
-        "data": {
-          "device": "Device",
-          "hvac_modes": "HVAC Mode: (deselect all options to revert to default behaviour)",
-          "more": "Configure another device"
-        },
-        "description": "Select a device and configure the HVAC modes"
+      "choose_options": {
+        "description": "Configuration options"
       },
-      "none": {
+      "hvac_modes": {
         "title": "Configure HVAC Modes",
-        "data": {},
-        "description": "No devices have configurable HVAC modes"
+        "description": "Select all to revert to default behaviour"
+      },
+      "defaults": {
+        "title": "Configure defaults",
+        "description": "Configure default values for various services",
+        "data": {
+          "stat_hold_duration": "Boost Duration",
+          "stat_hold_temp": "Boost Temperature",
+          "timer_hold_duration": "Override Duration"
+        },
+        "sections": {
+          "thermostat_options": {
+            "name": "Thermostat Options",
+            "description": "Options for thermostat devices",
+            "data": {
+              "stat_hold_duration": "Boost Duration",
+              "stat_hold_temp": "Boost Temperature"
+            },
+            "data_description": {
+              "stat_hold_duration": "Default duration when setting Boost preset",
+              "stat_hold_temp": "Default temperature increase from programmed value when setting Boost preset"
+            }
+          },
+          "timer_options": {
+            "name": "Timer Options",
+            "description": "Options for timer devices",
+            "data": {
+              "timer_hold_duration": "Override Duration"
+            },
+            "data_description": {
+              "timer_hold_duration": "Default duration when using timer override"
+            }
+          }
+        }
       }
     },
     "error": {}
@@ -248,6 +271,14 @@
         "create": "Create",
         "update": "Update",
         "upsert": "Upsert"
+      }
+    },
+    "available_mode_selector": {
+      "options": {
+        "heat": "Heat",
+        "cool": "Cool",
+        "auto": "Auto",
+        "vent": "Fan Only"
       }
     }
   }
