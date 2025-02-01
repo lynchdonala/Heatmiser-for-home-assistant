@@ -6,6 +6,7 @@ from collections import OrderedDict
 from dataclasses import dataclass
 from datetime import timedelta
 import logging
+from typing import Any
 
 from neohubapi.neohub import HCMode, NeoHub, NeoStat
 import voluptuous as vol
@@ -38,7 +39,11 @@ from . import HeatmiserNeoConfigEntry, hold_duration_validation
 from .const import (
     ATTR_HOLD_DURATION,
     ATTR_HOLD_TEMPERATURE,
+    CONF_DEFAULTS,
     CONF_HVAC_MODES,
+    CONF_STAT_HOLD_DURATION,
+    CONF_STAT_HOLD_TEMP,
+    CONF_THERMOSTAT_OPTIONS,
     DEFAULT_NEOSTAT_HOLD_DURATION,
     DEFAULT_NEOSTAT_TEMPERATURE_BOOST,
     HEATMISER_FAN_SPEED_HA_FAN_MODE,
@@ -53,10 +58,6 @@ from .const import (
 from .entity import HeatmiserNeoEntity, HeatmiserNeoEntityDescription
 
 _LOGGER = logging.getLogger(__name__)
-
-
-SUPPORT_FLAGS = 0
-THERMOSTATS = "thermostats"
 
 
 async def async_setup_entry(
@@ -76,16 +77,15 @@ async def async_setup_entry(
     system_data = coordinator.system_data
 
     hvac_config = entry.options.get(CONF_HVAC_MODES, {})
+    defaults = entry.options.get(CONF_DEFAULTS, {}).get(
+        CONF_THERMOSTAT_OPTIONS,
+        {
+            CONF_STAT_HOLD_DURATION: DEFAULT_NEOSTAT_HOLD_DURATION,
+            CONF_STAT_HOLD_TEMP: DEFAULT_NEOSTAT_TEMPERATURE_BOOST,
+        },
+    )
 
     _LOGGER.debug("hvac_config: %s", hvac_config)
-    for config in hvac_config:
-        _LOGGER.debug(
-            "Overriding the default HVAC modes from %s to %s for the %s climate entity",
-            neo_devices[config].available_modes,
-            hvac_config[config],
-            config,
-        )
-        neo_devices[config].available_modes = hvac_config[config]
 
     temperature_unit = HEATMISER_TEMPERATURE_UNIT_HA_UNIT.get(
         system_data.CORF, UnitOfTemperature.CELSIUS
@@ -102,9 +102,11 @@ async def async_setup_entry(
             description,
             temperature_unit,
             float(temperature_step),
+            hvac_config.get(name, None),
+            defaults,
         )
         for description in CLIMATE
-        for neodevice in neo_devices.values()
+        for name, neodevice in neo_devices.items()
         if description.setup_filter_fn(neodevice, system_data)
     )
 
@@ -160,6 +162,8 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
         entity_descriptor: HeatmiserNeoClimateEntityDescription,
         unit_of_measurement: UnitOfTemperature,
         temperature_step: float,
+        hvac_modes_override: list[str],
+        defaults: dict[str, Any],
     ) -> None:
         """Initialize Heatmiser Neo Climate entity."""
         super().__init__(
@@ -174,7 +178,7 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
         self._attr_max_temp = neostat.max_temperature_limit
         self._attr_min_temp = neostat.min_temperature_limit
         self._attr_preset_modes = [PRESET_HOME, PRESET_BOOST, PRESET_AWAY]
-
+        self._defaults = defaults
         supported_features = (
             ClimateEntityFeature.TURN_ON
             | ClimateEntityFeature.TURN_OFF
@@ -194,18 +198,18 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
             elif self.system_data.GLOBAL_SYSTEM_TYPE == GlobalSystemType.COOL_ONLY:
                 hvac_modes.append(HVACMode.COOL)
             else:
-                if AvailableMode.HEAT in neostat.available_modes:
+                if not hvac_modes_override or AvailableMode.HEAT in hvac_modes_override:
                     hvac_modes.append(HVACMode.HEAT)
                     heating = True
-                if AvailableMode.COOL in neostat.available_modes:
+                if not hvac_modes_override or AvailableMode.COOL in hvac_modes_override:
                     hvac_modes.append(HVACMode.COOL)
                     cooling = True
-                if AvailableMode.AUTO in neostat.available_modes:
+                if not hvac_modes_override or AvailableMode.AUTO in hvac_modes_override:
                     hvac_modes.append(HVACMode.HEAT_COOL)
                     heating = True
                     cooling = True
 
-            if AvailableMode.VENT in neostat.available_modes:
+            if not hvac_modes_override or AvailableMode.VENT in hvac_modes_override:
                 supported_features = supported_features | ClimateEntityFeature.FAN_MODE
                 hvac_modes.append(HVACMode.FAN_ONLY)
                 self._attr_fan_modes = [
@@ -508,8 +512,13 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
         hold_duration = 0
         hold_on = False
         if preset_mode == PRESET_BOOST:
-            hold_temp = hold_temp + DEFAULT_NEOSTAT_TEMPERATURE_BOOST
-            hold_duration = DEFAULT_NEOSTAT_HOLD_DURATION
+            hold_temp = hold_temp + self._defaults.get(
+                CONF_STAT_HOLD_TEMP, DEFAULT_NEOSTAT_TEMPERATURE_BOOST
+            )
+            hold_duration = self._defaults.get(
+                CONF_STAT_HOLD_DURATION,
+                DEFAULT_NEOSTAT_HOLD_DURATION,
+            )
             hold_on = True
 
         if device.hold_on != hold_on:

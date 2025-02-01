@@ -26,7 +26,9 @@ from .const import (
     ATTR_FRIENDLY_MODE,
     ATTR_HOLD_DURATION,
     ATTR_HOLD_STATE,
-    DEFAULT_PLUG_HOLD_DURATION,
+    CONF_DEFAULTS,
+    CONF_TIMER_HOLD_DURATION,
+    CONF_TIMER_OPTIONS,
     DEFAULT_TIMER_HOLD_DURATION,
     HEATMISER_TYPE_IDS_PLUG,
     HEATMISER_TYPE_IDS_THERMOSTAT,
@@ -95,9 +97,15 @@ async def set_timer_away(entity: HeatmiserNeoSelectEntity):
 async def set_timer_override(
     entity: HeatmiserNeoSelectEntity,
     on: bool,
-    duration: int = DEFAULT_TIMER_HOLD_DURATION,
+    duration: int | None = None,
 ):
     """Set timer override."""
+    if duration is None:
+        duration = (
+            entity.coordinator.config_entry.options.get(CONF_DEFAULTS, {})
+            .get(CONF_TIMER_OPTIONS, {})
+            .get(CONF_TIMER_HOLD_DURATION, DEFAULT_TIMER_HOLD_DURATION)
+        )
     dev = entity.data
     state = duration > 0
     if state:
@@ -140,10 +148,16 @@ async def set_plug_auto(entity: HeatmiserNeoSelectEntity):
 async def set_plug_override(
     entity: HeatmiserNeoSelectEntity,
     on: bool,
-    duration: int = DEFAULT_PLUG_HOLD_DURATION,
+    duration: int | None = None,
     turn_off_manual: bool = True,
 ):
     """Set timer override. Disable manual if set."""
+    if duration is None:
+        duration = (
+            entity.coordinator.config_entry.options.get(CONF_DEFAULTS, {})
+            .get(CONF_TIMER_OPTIONS, {})
+            .get(CONF_TIMER_HOLD_DURATION, DEFAULT_TIMER_HOLD_DURATION)
+        )
     dev = entity.data
     hub = entity.coordinator.hub
     state = duration > 0
