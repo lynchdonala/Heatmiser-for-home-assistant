@@ -10,7 +10,6 @@ from typing import Any
 import voluptuous as vol
 
 from homeassistant.components.climate import UnitOfTemperature
-from homeassistant.components.zeroconf import ZeroconfServiceInfo
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import callback
@@ -25,6 +24,7 @@ from homeassistant.helpers.selector import (
     SelectSelectorConfig,
     SelectSelectorMode,
 )
+from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
 
 from . import HeatmiserNeoConfigEntry, hold_duration_validation
 from .const import (
