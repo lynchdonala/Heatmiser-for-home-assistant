@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.2
+    rev: v0.9.5
     hooks:
       - id: ruff
         args:
@@ -8,14 +8,14 @@ repos:
       - id: ruff-format
         files: ^((custom_components)/.+)?[^/]+\.(py|pyi)$
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.3.0
+    rev: v2.4.1
     hooks:
       - id: codespell
         args:
           - --ignore-words-list=astroid,checkin,hass,iif,NotIn
           - --quiet-level=2
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v5.0.0
     hooks:
       - id: check-json
         exclude: (.vscode|.devcontainer)
