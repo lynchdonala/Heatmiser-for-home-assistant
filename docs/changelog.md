@@ -1,5 +1,9 @@
 # Change Log
 
+## 20250206
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/257 by @ocrease, fixed ZeroconfServiceInfo deprecation warning
+
 ## 20250201
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/254 by @ocrease, improved options configuration flow
