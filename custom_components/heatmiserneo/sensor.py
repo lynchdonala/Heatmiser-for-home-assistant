@@ -417,7 +417,7 @@ async def async_create_profile(
             )
         if timer != timer_profile:
             raise HomeAssistantError(
-                f"A {"heating" if timer else "timer"} profile with name '{profile_name}' already exists"
+                f"A {'heating' if timer else 'timer'} profile with name '{profile_name}' already exists"
             )
 
     heating_levels = 4 if timer else coordinator.system_data.HEATING_LEVELS
