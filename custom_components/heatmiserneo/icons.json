@@ -1,5 +1,16 @@
 {
   "entity": {
+    "climate": {
+      "heatmiserneo": {
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "standby": "mdi:snowflake-thermometer"
+            }
+          }
+        }
+      }
+    },
     "sensor": {
       "fan_speed": {
         "default": "mdi:fan",

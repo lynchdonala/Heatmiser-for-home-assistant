@@ -13,11 +13,8 @@ There are three preset modes:
 
 - Home - The thermostat will follow a profile
 - Boost - The thermostat is set to 2 degrees higher for 30 minutes (The default duration and temperature boost can be configured using Configure on the hub entry)
-- Away - The thermostat is in frost protection mode. The thermostat is not following a profile and will only call for heat if the temperature drops below the configured frost protection temperature.
-  > ##### WARNING
-  >
-  > NOTE: Setting any thermostat to Away will change all thermostats and timers to Away. Turning off a single thermostat can be done by changing the mode to off
-  > {: .block-warning }
+- Standby - The thermostat is in frost protection mode. The thermostat is not following a profile and will only call for heat if the temperature drops below the configured frost protection temperature.
+- Away - Same as Standby, but all thermostats and timers are set to Away
 
 ## Helper Sensors/Entities
 

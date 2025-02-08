@@ -68,6 +68,17 @@
     "error": {}
   },
   "entity": {
+    "climate": {
+      "heatmiserneo": {
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "standby": "Standby"
+            }
+          }
+        }
+      }
+    },
     "lock": {
       "lock": {
         "name": "Lock"

@@ -31,6 +31,7 @@ from homeassistant.components.climate import (
 )
 from homeassistant.const import ATTR_TEMPERATURE
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_platform
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -46,10 +47,12 @@ from .const import (
     CONF_THERMOSTAT_OPTIONS,
     DEFAULT_NEOSTAT_HOLD_DURATION,
     DEFAULT_NEOSTAT_TEMPERATURE_BOOST,
+    DOMAIN,
     HEATMISER_FAN_SPEED_HA_FAN_MODE,
     HEATMISER_TEMPERATURE_UNIT_HA_UNIT,
     HEATMISER_TYPE_IDS_HC,
     HEATMISER_TYPE_IDS_THERMOSTAT,
+    PRESET_STANDBY,
     SERVICE_HOLD_OFF,
     SERVICE_HOLD_ON,
     AvailableMode,
@@ -153,6 +156,7 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
     """Represents a Heatmiser neoStat thermostat."""
 
     _enable_turn_on_off_backwards_compatibility = False
+    _attr_translation_key = DOMAIN
 
     def __init__(
         self,
@@ -177,21 +181,19 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
         self._attr_target_temperature_step = temperature_step
         self._attr_max_temp = neostat.max_temperature_limit
         self._attr_min_temp = neostat.min_temperature_limit
-        self._attr_preset_modes = [PRESET_HOME, PRESET_BOOST, PRESET_AWAY]
+        self._attr_preset_modes = [
+            PRESET_HOME,
+            PRESET_BOOST,
+            PRESET_AWAY,
+            PRESET_STANDBY,
+        ]
         self._defaults = defaults
-        supported_features = (
-            ClimateEntityFeature.TURN_ON
-            | ClimateEntityFeature.TURN_OFF
-            | ClimateEntityFeature.PRESET_MODE
-        )
+        supported_features = ClimateEntityFeature.PRESET_MODE
 
         hvac_modes = []
 
         heating = False
         cooling = False
-        if hasattr(neostat, "standby"):
-            hvac_modes.append(HVACMode.OFF)
-        # The following devices support Heating modes
         if self.data.device_type in HEATMISER_TYPE_IDS_HC:
             if self.system_data.GLOBAL_SYSTEM_TYPE == GlobalSystemType.HEAT_ONLY:
                 hvac_modes.append(HVACMode.HEAT)
@@ -239,6 +241,34 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
         _LOGGER.info("%s : Executing set_hvac_mode() with: %s", self.name, hvac_mode)
         _LOGGER.debug("self.data: %s", self.data)
 
+        ## HVACMode.OFF is now PRESET_STANDBY. Adding this for backwards compatibility temporarily.
+        ## HA 2025.4 will remove the ability to set invalid HVAC modes anyway
+        if hvac_mode is HVACMode.OFF:
+            _LOGGER.warning(
+                "Standby is now a preset. Please use set_preset_mode instead"
+            )
+            return await self.async_set_preset_mode(PRESET_STANDBY)
+
+        if self.data.device_type not in HEATMISER_TYPE_IDS_HC:
+            if self.data.standby:
+                _LOGGER.warning(
+                    "Standby is now a preset. Please use set_preset_mode instead"
+                )
+                await self.data.set_frost(False)
+                self.data.standby = False
+                self.coordinator.async_update_listeners()
+                return None
+            raise HomeAssistantError("Only NeoStat HC devices allow changing HVAC_MODE")
+
+        if hvac_mode not in self.hvac_modes:
+            modes_str = ", ".join(self.hvac_modes)
+            _LOGGER.warning(
+                "Mode %s is not supported. Supported modes are [%s]",
+                hvac_mode,
+                modes_str,
+            )
+            return None
+
         hc_mode: HCMode = None
         if hvac_mode == HVACMode.HEAT:
             hc_mode = HCMode.HEATING
@@ -249,43 +279,21 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
         elif hvac_mode == HVACMode.FAN_ONLY:
             hc_mode = HCMode.VENT
 
-        if hvac_mode != HVACMode.OFF:
-            frost_mode = False  # Standby Mode False
+        if not hc_mode:
+            _LOGGER.warning("No mapping for mode %s", hvac_mode)
+            return None
 
-            set_frost_task = asyncio.create_task(self.data.set_frost(frost_mode))
-            response = await set_frost_task
-            _LOGGER.info(
-                "%s : Called set_frost() with: %s (response: %s)",
-                self.name,
-                frost_mode,
-                response,
-            )
-            if self.data.standby:
-                self.data.standby = False
-
-            set_hc_mode_task = asyncio.create_task(self.data.set_hc_mode(hc_mode))
-            response = await set_hc_mode_task
-            _LOGGER.info(
-                "%s : Called set_hc_mode() with: %s (response: %s)",
-                self.name,
-                hc_mode,
-                response,
-            )
-            self.data.hc_mode = hc_mode
-        else:
-            frost_mode = True  # Turn on Standby Mode
-            set_frost_task = asyncio.create_task(self.data.set_frost(frost_mode))
-            response = await set_frost_task
-            _LOGGER.info(
-                "%s : Called set_frost() with: %s (response: %s)",
-                self.name,
-                frost_mode,
-                response,
-            )
-            if not self.data.standby:
-                self.data.standby = True
+        set_hc_mode_task = asyncio.create_task(self.data.set_hc_mode(hc_mode))
+        response = await set_hc_mode_task
+        _LOGGER.info(
+            "%s : Called set_hc_mode() with: %s (response: %s)",
+            self.name,
+            hc_mode,
+            response,
+        )
+        self.data.hc_mode = hc_mode
         self.coordinator.async_update_listeners()
-        await self.coordinator.async_request_refresh()
+        return await self.coordinator.async_request_refresh()
 
     async def async_set_temperature(self, **kwargs):
         """Set new target temperature."""
@@ -394,8 +402,6 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
     @property
     def hvac_mode(self):
         """Return The current operation (e.g. heat, cool, idle). Used to determine state."""
-        if self.data.standby:
-            return HVACMode.OFF
         if self.data.device_type in HEATMISER_TYPE_IDS_HC:
             if self.data.hc_mode == "COOLING":
                 return HVACMode.COOL
@@ -474,10 +480,12 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
     @property
     def preset_mode(self) -> str:
         """Return the preset_mode."""
-        if self.data.away or self.data.holiday:
-            return PRESET_AWAY
         if self.data.hold_on:
             return PRESET_BOOST
+        if self.data.standby:
+            return PRESET_STANDBY
+        if self.data.away or self.data.holiday:
+            return PRESET_AWAY
         return PRESET_HOME
 
     @property
@@ -503,9 +511,19 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Set preset mode."""
         device = self.data
+        disable_away = True
+        if preset_mode == PRESET_STANDBY:
+            disable_away = False
+            if not device.standby:
+                await device.set_frost(True)
+                device.standby = True
+        elif device.standby:
+            await device.set_frost(False)
+            device.standby = False
+
         if preset_mode == PRESET_AWAY:
             await self.async_set_away_mode()
-        elif device.away or device.holiday:
+        elif disable_away and (device.away or device.holiday):
             await self.async_cancel_away_or_holiday()
 
         hold_temp = float(device.target_temperature)

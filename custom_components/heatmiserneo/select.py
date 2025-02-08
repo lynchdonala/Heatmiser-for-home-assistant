@@ -515,7 +515,7 @@ HUB_SELECT: Final[tuple[HeatmiserNeoHubSelectEntityDescription, ...]] = (
             "tz1300",
             "tz1400",
         ],
-        value_fn=lambda coordinator: f"tz{(coordinator.system_data.TIME_ZONE*100):g}",
+        value_fn=lambda coordinator: f"tz{(coordinator.system_data.TIME_ZONE * 100):g}",
         set_value_fn=lambda timezone, entity: async_set_timezone(
             entity.coordinator, timezone
         ),

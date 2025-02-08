@@ -1,5 +1,9 @@
 # Change Log
 
+## 20250208
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/258 by @ocrease, Standby is now a preset rather than HVACMode.OFF
+
 ## 20250206
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/257 by @ocrease, fixed ZeroconfServiceInfo deprecation warning
