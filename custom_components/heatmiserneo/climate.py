@@ -31,6 +31,7 @@ from homeassistant.components.climate import (
 )
 from homeassistant.const import ATTR_TEMPERATURE
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_platform
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -240,6 +241,34 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
         _LOGGER.info("%s : Executing set_hvac_mode() with: %s", self.name, hvac_mode)
         _LOGGER.debug("self.data: %s", self.data)
 
+        ## HVACMode.OFF is now PRESET_STANDBY. Adding this for backwards compatibility temporarily.
+        ## HA 2025.4 will remove the ability to set invalid HVAC modes anyway
+        if hvac_mode is HVACMode.OFF:
+            _LOGGER.warning(
+                "Standby is now a preset. Please use set_preset_mode instead"
+            )
+            return await self.async_set_preset_mode(PRESET_STANDBY)
+
+        if self.data.device_type not in HEATMISER_TYPE_IDS_HC:
+            if self.data.standby:
+                _LOGGER.warning(
+                    "Standby is now a preset. Please use set_preset_mode instead"
+                )
+                await self.data.set_frost(False)
+                self.data.standby = False
+                self.coordinator.async_update_listeners()
+                return None
+            raise HomeAssistantError("Only NeoStat HC devices allow changing HVAC_MODE")
+
+        if hvac_mode not in self.hvac_modes:
+            modes_str = ", ".join(self.hvac_modes)
+            _LOGGER.warning(
+                "Mode %s is not supported. Supported modes are [%s]",
+                hvac_mode,
+                modes_str,
+            )
+            return None
+
         hc_mode: HCMode = None
         if hvac_mode == HVACMode.HEAT:
             hc_mode = HCMode.HEATING
@@ -250,43 +279,21 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
         elif hvac_mode == HVACMode.FAN_ONLY:
             hc_mode = HCMode.VENT
 
-        if hvac_mode != HVACMode.OFF:
-            frost_mode = False  # Standby Mode False
+        if not hc_mode:
+            _LOGGER.warning("No mapping for mode %s", hvac_mode)
+            return None
 
-            set_frost_task = asyncio.create_task(self.data.set_frost(frost_mode))
-            response = await set_frost_task
-            _LOGGER.info(
-                "%s : Called set_frost() with: %s (response: %s)",
-                self.name,
-                frost_mode,
-                response,
-            )
-            if self.data.standby:
-                self.data.standby = False
-
-            set_hc_mode_task = asyncio.create_task(self.data.set_hc_mode(hc_mode))
-            response = await set_hc_mode_task
-            _LOGGER.info(
-                "%s : Called set_hc_mode() with: %s (response: %s)",
-                self.name,
-                hc_mode,
-                response,
-            )
-            self.data.hc_mode = hc_mode
-        else:
-            frost_mode = True  # Turn on Standby Mode
-            set_frost_task = asyncio.create_task(self.data.set_frost(frost_mode))
-            response = await set_frost_task
-            _LOGGER.info(
-                "%s : Called set_frost() with: %s (response: %s)",
-                self.name,
-                frost_mode,
-                response,
-            )
-            if not self.data.standby:
-                self.data.standby = True
+        set_hc_mode_task = asyncio.create_task(self.data.set_hc_mode(hc_mode))
+        response = await set_hc_mode_task
+        _LOGGER.info(
+            "%s : Called set_hc_mode() with: %s (response: %s)",
+            self.name,
+            hc_mode,
+            response,
+        )
+        self.data.hc_mode = hc_mode
         self.coordinator.async_update_listeners()
-        await self.coordinator.async_request_refresh()
+        return await self.coordinator.async_request_refresh()
 
     async def async_set_temperature(self, **kwargs):
         """Set new target temperature."""
