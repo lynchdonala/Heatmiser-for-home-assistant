@@ -6,11 +6,13 @@
         "title": "Heatmiser Neo",
         "data": {
           "host": "Host",
-          "port": "Port"
+          "port": "Port",
+          "api_token": "API Token"
         },
         "data_description": {
           "host": "The hostname or IP address of the NeoHub to connect to.",
-          "port": "The TCP port of the NeoHub to connect to (4242 for the Legacy API)."
+          "port": "The TCP port of the NeoHub to connect to (4242 for the Legacy API).",
+          "api_token": "The API token to access the NeoHub API"
         }
       },
       "zeroconf_confirm": {

@@ -10,8 +10,13 @@ from typing import Any
 import voluptuous as vol
 
 from homeassistant.components.climate import UnitOfTemperature
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow
-from homeassistant.const import CONF_HOST, CONF_PORT
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlow,
+)
+from homeassistant.const import CONF_HOST, CONF_PORT, CONF_API_TOKEN
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers.selector import (
@@ -40,6 +45,7 @@ from .const import (
     DEFAULT_NEOSTAT_TEMPERATURE_BOOST,
     DEFAULT_PORT,
     DEFAULT_TIMER_HOLD_DURATION,
+    DEFAULT_TOKEN,
     DOMAIN,
     HEATMISER_TEMPERATURE_UNIT_HA_UNIT,
     HEATMISER_TYPE_IDS_HC,
@@ -54,12 +60,44 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
     """Handle a config flow."""
 
     VERSION = 1
+    MINOR_VERSION = 1
 
     def __init__(self) -> None:
         """Initialize Heatmiser Neo options flow."""
         self._host = DEFAULT_HOST
         self._port = DEFAULT_PORT
+        self._token = DEFAULT_TOKEN
         self._errors = None
+
+    async def async_migrate_entry(self, config_entry: ConfigEntry):
+        """Migrate old entry."""
+        _LOGGER.debug(
+            "Migrating configuration from version %s.%s",
+            config_entry.version,
+            config_entry.minor_version,
+        )
+
+        if config_entry.version != 1:
+            # This means the user has downgraded from a future version
+            return False
+
+        if config_entry.minor_version is None or config_entry.minor_version < 1:
+            new_data = {**config_entry.data, CONF_API_TOKEN: DEFAULT_TOKEN}
+
+            self.config_entries.async_update_entry(
+                config_entry,
+                data=new_data,
+                minor_version=FlowHandler.MINOR_VERSION,
+                version=FlowHandler.VERSION,
+            )
+
+        _LOGGER.debug(
+            "Migration to configuration version %s.%s successful",
+            config_entry.version,
+            config_entry.minor_version,
+        )
+
+        return True
 
     async def async_step_zeroconf(
         self, discovery_info: ZeroconfServiceInfo
@@ -105,7 +143,11 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
     def _async_get_entry(self) -> ConfigFlowResult:
         return self.async_create_entry(
             title=f"{self._host}:{self._port}",
-            data={CONF_HOST: self._host, CONF_PORT: self._port},
+            data={
+                CONF_HOST: self._host,
+                CONF_PORT: self._port,
+                CONF_API_TOKEN: self._token,
+            },
         )
 
     async def async_step_user(
@@ -117,6 +159,7 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             self._host = user_input[CONF_HOST]
             self._port = user_input[CONF_PORT]
+            self._token = user_input[CONF_API_TOKEN]
 
             await self.async_set_unique_id(f"{self._host}:{self._port}")
             self._abort_if_unique_id_configured()
@@ -133,6 +176,7 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required(CONF_HOST, default=self._host): str,
                     vol.Required(CONF_PORT, default=self._port): int,
+                    vol.Optional(CONF_API_TOKEN, default=self._token): str,
                 }
             ),
             errors=self._errors,
