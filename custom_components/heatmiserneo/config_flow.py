@@ -4,19 +4,14 @@
 
 from copy import deepcopy
 import logging
-import socket
 from typing import Any
 
+from neohubapi.neohub import NeoHub, NeoHubConnectionError
 import voluptuous as vol
 
 from homeassistant.components.climate import UnitOfTemperature
-from homeassistant.config_entries import (
-    ConfigEntry,
-    ConfigFlow,
-    ConfigFlowResult,
-    OptionsFlow,
-)
-from homeassistant.const import CONF_HOST, CONF_PORT, CONF_API_TOKEN
+from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow
+from homeassistant.const import CONF_API_TOKEN, CONF_HOST, CONF_PORT
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers.selector import (
@@ -33,6 +28,8 @@ from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
 
 from . import HeatmiserNeoConfigEntry, hold_duration_validation
 from .const import (
+    CONF_CONN_METHOD_LEGACY,
+    CONF_CONN_METHOD_WEBSOCKET,
     CONF_DEFAULTS,
     CONF_HVAC_MODES,
     CONF_STAT_HOLD_DURATION,
@@ -45,7 +42,7 @@ from .const import (
     DEFAULT_NEOSTAT_TEMPERATURE_BOOST,
     DEFAULT_PORT,
     DEFAULT_TIMER_HOLD_DURATION,
-    DEFAULT_TOKEN,
+    DEFAULT_WEBSOCKET_PORT,
     DOMAIN,
     HEATMISER_TEMPERATURE_UNIT_HA_UNIT,
     HEATMISER_TYPE_IDS_HC,
@@ -64,40 +61,9 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         """Initialize Heatmiser Neo options flow."""
-        self._host = DEFAULT_HOST
-        self._port = DEFAULT_PORT
-        self._token = DEFAULT_TOKEN
-        self._errors = None
-
-    async def async_migrate_entry(self, config_entry: ConfigEntry):
-        """Migrate old entry."""
-        _LOGGER.debug(
-            "Migrating configuration from version %s.%s",
-            config_entry.version,
-            config_entry.minor_version,
-        )
-
-        if config_entry.version != 1:
-            # This means the user has downgraded from a future version
-            return False
-
-        if config_entry.minor_version is None or config_entry.minor_version < 1:
-            new_data = {**config_entry.data, CONF_API_TOKEN: DEFAULT_TOKEN}
-
-            self.config_entries.async_update_entry(
-                config_entry,
-                data=new_data,
-                minor_version=FlowHandler.MINOR_VERSION,
-                version=FlowHandler.VERSION,
-            )
-
-        _LOGGER.debug(
-            "Migration to configuration version %s.%s successful",
-            config_entry.version,
-            config_entry.minor_version,
-        )
-
-        return True
+        self._host = None
+        self._port = None
+        self._token = None
 
     async def async_step_zeroconf(
         self, discovery_info: ZeroconfServiceInfo
@@ -105,6 +71,7 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
         """Handle zeroconf discovery."""
         _LOGGER.debug("Zeroconfig discovered %s", discovery_info)
         self._host = discovery_info.host
+        self._port = DEFAULT_PORT
 
         await self.async_set_unique_id(f"{self._host}:{self._port}")
         self._abort_if_unique_id_configured()
@@ -116,10 +83,10 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
         """Handle a flow initiated by zeroconf."""
         _LOGGER.debug("context %s", self.context)
         if user_input is not None:
-            self._errors = await self.try_connection()
-            if not self._errors:
+            conn_error = await self.try_connection()
+            if not conn_error:
                 return self._async_get_entry()
-            return await self.async_step_user()
+            return self.async_abort(reason="cannot_connect")
 
         return self.async_show_form(
             step_id="zeroconf_confirm",
@@ -129,57 +96,101 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
     async def try_connection(self):
         """Try connection to NeoHub."""
         _LOGGER.debug("Trying connection to NeoHub")
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(5)
         try:
-            sock.connect((self._host, self._port))
-        except OSError:
+            hub = NeoHub(self._host, self._port, token=self._token)
+            await hub.firmware()
+        except NeoHubConnectionError:
             return "cannot_connect"
-        sock.close()
         _LOGGER.debug("Connection Worked!")
         return None
 
     @callback
     def _async_get_entry(self) -> ConfigFlowResult:
+        data = {CONF_HOST: self._host, CONF_PORT: self._port}
+        if self._token:
+            data[CONF_API_TOKEN] = self._token
         return self.async_create_entry(
             title=f"{self._host}:{self._port}",
-            data={
-                CONF_HOST: self._host,
-                CONF_PORT: self._port,
-                CONF_API_TOKEN: self._token,
-            },
+            data=data,
         )
+
+    async def _configure_entry(
+        self, user_input: dict[str, Any] | None = None
+    ) -> tuple[ConfigFlowResult, dict[str, str]]:
+        errors = {}
+        self._host = user_input[CONF_HOST]
+        self._port = user_input[CONF_PORT]
+        self._token = user_input.get(CONF_API_TOKEN)
+
+        await self.async_set_unique_id(f"{self._host}:{self._port}")
+        self._abort_if_unique_id_configured()
+
+        conn_error = await self.try_connection()
+        if not conn_error:
+            return self._async_get_entry(), None
+
+        errors["base"] = conn_error
+        return None, errors
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Handle a flow initialized by the user."""
-        _LOGGER.debug("User Input %s", user_input)
-
-        if user_input is not None:
-            self._host = user_input[CONF_HOST]
-            self._port = user_input[CONF_PORT]
-            self._token = user_input[CONF_API_TOKEN]
-
-            await self.async_set_unique_id(f"{self._host}:{self._port}")
-            self._abort_if_unique_id_configured()
-
-            self._errors = await self.try_connection()
-            if not self._errors:
-                return self._async_get_entry()
-
-            _LOGGER.error("Error: %s", self._errors)
-
-        return self.async_show_form(
+        return self.async_show_menu(
             step_id="user",
+            menu_options=[CONF_CONN_METHOD_WEBSOCKET, CONF_CONN_METHOD_LEGACY],
+        )
+
+    async def async_step_conn_method_websocket(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle a flow initialized by the user."""
+
+        errors = {}
+        if user_input is not None:
+            result, errors = await self._configure_entry(user_input)
+            if not errors:
+                return result
+        return self.async_show_form(
+            step_id=CONF_CONN_METHOD_WEBSOCKET,
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_HOST, default=self._host): str,
-                    vol.Required(CONF_PORT, default=self._port): int,
-                    vol.Optional(CONF_API_TOKEN, default=self._token): str,
+                    vol.Required(
+                        CONF_HOST, default=self._host if self._host else DEFAULT_HOST
+                    ): str,
+                    vol.Required(
+                        CONF_PORT,
+                        default=self._port if self._port else DEFAULT_WEBSOCKET_PORT,
+                    ): int,
+                    vol.Required(CONF_API_TOKEN, default=self._token): str,
                 }
             ),
-            errors=self._errors,
+            errors=errors,
+        )
+
+    async def async_step_conn_method_legacy(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle a flow initialized by the user."""
+        errors = {}
+        if user_input is not None:
+            result, errors = await self._configure_entry(user_input)
+            if not errors:
+                return result
+
+        return self.async_show_form(
+            step_id=CONF_CONN_METHOD_LEGACY,
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_HOST, default=self._host if self._host else DEFAULT_HOST
+                    ): str,
+                    vol.Required(
+                        CONF_PORT, default=self._port if self._port else DEFAULT_PORT
+                    ): int,
+                }
+            ),
+            errors=errors,
         )
 
     @staticmethod
