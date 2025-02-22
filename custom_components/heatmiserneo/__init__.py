@@ -9,7 +9,7 @@ from neohubapi.neohub import NeoHub
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_HOST, CONF_PORT, Platform
+from homeassistant.const import CONF_API_TOKEN, CONF_HOST, CONF_PORT, Platform
 from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
 
@@ -48,9 +48,14 @@ async def async_setup_entry(
     # Set the Hub up to use and save
     host = entry.data[CONF_HOST]
     port = entry.data[CONF_PORT]
+    token = entry.data.get(CONF_API_TOKEN)
+
     # Make this configurable or retrieve from an API later.
     hub_serial_number = f"NEOHUB-SN:000000-{host}"
-    hub = NeoHub(host, port)
+    if token:
+        hub = NeoHub(host, port, token=token)
+    else:
+        hub = NeoHub(host, port)
 
     coordinator = HeatmiserNeoCoordinator(hass, hub)
 
