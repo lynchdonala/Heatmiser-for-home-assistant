@@ -1,5 +1,13 @@
 # Change Log
 
+## 20250223
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/261 by @ocrease, pre-release cleanup tasks
+
+## 20250222
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/260 by @mr-miles, added websocket support
+
 ## 20250208
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/258 by @ocrease, Standby is now a preset rather than HVACMode.OFF

@@ -34,11 +34,23 @@ Go to Configuration -> Integrations and click on the orange icon in the bottom r
 
 ![HowToIntegrate](/images/installation_4.png)
 
-When the integration starts you may need to enter the Neo-hub IP address. The port is always 4242.
+You will have the option of using the Websocket API or the Legacy API.
+
+![ConnectionOptions](/images/installation_5_menu.png)
+
+### WebSocket API
+
+You will need to obtain an API Key from the Heatmiser App (Settings -> API). The port is always 4243 for the Websocket API
+
+![Websocket API](/images/installation_5_websocket.png)
+
+### Legacy API
+
+You will need to enable the legacy API in the Heatmiser App (Settings -> API). The port is always 4242 for the Legacy API
 
 ![Config](/images/installation_5.png)
 
-If you are successful, after restarting HA you will see the results under Configuration -> Entities
+If you are successful, you will see that the hub has been added and you should be able to see the devices.
 
 ![Entities](/images/installation_6.png)
 

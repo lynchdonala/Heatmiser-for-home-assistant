@@ -332,9 +332,7 @@ async def async_rename_profile(
     if conflicting_profile_id:
         raise HomeAssistantError(f"New name '{new_name}' already in use")
 
-    message = {"PROFILE_TITLE": [old_name, new_name]}
-    reply = {"result": "profile renamed"}
-    await entity.coordinator.hub._send(message, reply)  # noqa: SLF001
+    await entity.coordinator.hub.rename_profile(old_name, new_name)
     if timer:
         entity.coordinator.timer_profiles[profile_id].name = new_name
     else:
@@ -351,9 +349,7 @@ async def async_delete_profile(
     if not profile_id:
         raise HomeAssistantError(f"Profile '{profile_name}' does not exist")
 
-    message = {"CLEAR_PROFILE": profile_name}
-    reply = {"result": "profile removed"}
-    await entity.coordinator.hub._send(message, reply)  # noqa: SLF001
+    await entity.coordinator.hub.delete_profile(profile_name)
     if timer:
         del entity.coordinator.timer_profiles[profile_id]
     else:
