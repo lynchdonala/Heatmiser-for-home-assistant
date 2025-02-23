@@ -82,11 +82,8 @@ async def async_set_floor_limit(entity: HeatmiserNeoEntity, val: float) -> None:
 
 
 async def async_set_user_limit(entity: HeatmiserNeoEntity, val: int) -> None:
-    """Set the floor limit temperature on a device."""
-    message = {"USER_LIMIT": [val, [entity.data.name]]}
-    # TODO this should be in the API
-    await entity.coordinator.hub._send(message)  # noqa: SLF001
-    entity.coordinator.hub._update_timestamps["TIMESTAMP_ENGINEERS"] = 0  # noqa: SLF001
+    """Set the user limit temperature on a device."""
+    await entity.data.set_user_limit(int(val))
     setattr(entity.data._data_, "USER_LIMIT", int(val))
 
 
