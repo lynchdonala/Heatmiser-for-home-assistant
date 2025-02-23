@@ -303,29 +303,31 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
         low_temp = kwargs.get(ATTR_TEMPERATURE) or kwargs.get(ATTR_TARGET_TEMP_LOW)
         high_temp = kwargs.get(ATTR_TARGET_TEMP_HIGH)
 
-        set_target_temperature_task = asyncio.create_task(
-            self.data.set_target_temperature(low_temp)
-        )
-        response = await set_target_temperature_task
-        if response:
-            _LOGGER.info(
-                "%s : Called set_target_temperature with: %s (response: %s)",
-                self.name,
-                low_temp,
-                response,
+        if low_temp:
+            set_target_temperature_task = asyncio.create_task(
+                self.data.set_target_temperature(low_temp)
             )
+            response = await set_target_temperature_task
+            if response:
+                _LOGGER.info(
+                    "%s : Called set_target_temperature with: %s (response: %s)",
+                    self.name,
+                    low_temp,
+                    response,
+                )
 
-        set_target_cool_temperature_task = asyncio.create_task(
-            self.data.set_cool_temp(high_temp)
-        )
-        response = await set_target_cool_temperature_task
-        if response:
-            _LOGGER.info(
-                "%s : Called set_cool_temp with: %s (response: %s)",
-                self.name,
-                high_temp,
-                response,
+        if high_temp:
+            set_target_cool_temperature_task = asyncio.create_task(
+                self.data.set_cool_temp(high_temp)
             )
+            response = await set_target_cool_temperature_task
+            if response:
+                _LOGGER.info(
+                    "%s : Called set_cool_temp with: %s (response: %s)",
+                    self.name,
+                    high_temp,
+                    response,
+                )
 
         # The change of target temperature may trigger a change in the current hvac_action
         # so we schedule a refresh to get new data asap.
