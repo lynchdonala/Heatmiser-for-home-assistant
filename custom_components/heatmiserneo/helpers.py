@@ -123,7 +123,7 @@ def _heating_level_filter(level):
 
 
 def _is_valid_time(time) -> bool:
-    return time == "24:00" or time > "24:00"
+    return not (time == "24:00" or time > "24:00")
 
 
 def _flatten_timer_levels(levels):
