@@ -1,5 +1,9 @@
 # Change Log
 
+## 20250224
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/266 by @ocrease, handle invalid/disabled profile times
+
 ## 20250223
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/263 by @ocrease, fix Invalid Json error when setting temperature using WebSocket API

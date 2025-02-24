@@ -104,7 +104,7 @@ def _profile_levels(profile, key: Weekday, filter) -> list:
 
 
 def _timer_level_filter(level):
-    if level[0] == "24:00":
+    if not _is_valid_time(level[0]):
         return False
     if level[0] == level[1]:
         return False
@@ -112,7 +112,7 @@ def _timer_level_filter(level):
 
 
 def _heating_level_filter(level):
-    if level[0] == "24:00":
+    if not _is_valid_time(level[0]):
         return False
     if level[1] < 5:
         return False
@@ -120,6 +120,10 @@ def _heating_level_filter(level):
         if level[2] < 5 and level[3]:
             return False
     return True
+
+
+def _is_valid_time(time) -> bool:
+    return time == "24:00" or time > "24:00"
 
 
 def _flatten_timer_levels(levels):
@@ -285,7 +289,7 @@ def get_profile_definition(
                 wd: [
                     {"time_on": e[0], "time_off": e[1]}
                     for e in sorted(lv.values(), key=lambda x: x[0])
-                    if e[0] != "24:00"
+                    if _is_valid_time(e[0])
                 ]
                 for wd, lv in info.items()
             }
@@ -296,7 +300,7 @@ def get_profile_definition(
                 wd + "_on_times": [
                     e[0]
                     for e in sorted(lv.values(), key=lambda x: x[0])
-                    if e[0] != "24:00"
+                    if _is_valid_time(e[0])
                 ]
                 for wd, lv in info.items()
             }
@@ -304,7 +308,7 @@ def get_profile_definition(
                 wd + "_off_times": [
                     e[1]
                     for e in sorted(lv.values(), key=lambda x: x[0])
-                    if e[0] != "24:00"
+                    if _is_valid_time(e[0])
                 ]
                 for wd, lv in info.items()
             }
@@ -317,7 +321,7 @@ def get_profile_definition(
             wd: [
                 {"time": e[0], "temperature": e[1]}
                 for e in sorted(lv.values(), key=lambda x: x[0])
-                if e[0] != "24:00"
+                if _is_valid_time(e[0])
             ]
             for wd, lv in info.items()
         }
@@ -325,13 +329,17 @@ def get_profile_definition(
     else:
         times = {
             wd + "_times": [
-                e[0] for e in sorted(lv.values(), key=lambda x: x[0]) if e[0] != "24:00"
+                e[0]
+                for e in sorted(lv.values(), key=lambda x: x[0])
+                if _is_valid_time(e[0])
             ]
             for wd, lv in info.items()
         }
         temperatures = {
             wd + "_temperatures": [
-                e[1] for e in sorted(lv.values(), key=lambda x: x[0]) if e[0] != "24:00"
+                e[1]
+                for e in sorted(lv.values(), key=lambda x: x[0])
+                if _is_valid_time(e[0])
             ]
             for wd, lv in info.items()
         }
