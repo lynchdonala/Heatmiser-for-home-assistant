@@ -99,6 +99,7 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
         try:
             hub = NeoHub(self._host, self._port, token=self._token)
             await hub.firmware()
+            await hub.disconnect()
         except NeoHubConnectionError:
             return "cannot_connect"
         _LOGGER.debug("Connection Worked!")
