@@ -82,7 +82,12 @@ async def async_unload_entry(
     hass: HomeAssistant, entry: HeatmiserNeoConfigEntry
 ) -> bool:
     """Unload a config entry."""
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    hub = entry.runtime_data.hub
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+    await hub.disconnect()
+
+    return unload_ok
 
 
 async def options_update_listener(

@@ -1,5 +1,9 @@
 # Change Log
 
+## 20250225
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/268 by @ocrease, use NeoHubAPI 2.8 to benefit from improved connection handling
+
 ## 20250224
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/266 by @ocrease, handle invalid/disabled profile times
