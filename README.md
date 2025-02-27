@@ -21,10 +21,7 @@ Full documentation is available here - [Heatmiser for Home Assistant](https://mi
 
 # Known issues - Read me first!
 
-- Heatmiser have labeled the primary API used by this integration as "Legacy API". Please see [Troubleshooting](#troubleshooting) for further details.
-- Support for adding Token based authentication is present in the underlying noehubapi and will be coming to this plugin natively at a future date.
 - Note specifically the NeoStat WiFi device does not have an API, and so cannot be used with this (or any) NeoHub-based integration.
-- Neoplug devices are broken in the dev and 1.5 branch and are due to be fixed as soon as I get a chance to look into the details.
 
 # Supporting this project
 
